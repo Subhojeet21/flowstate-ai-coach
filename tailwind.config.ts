@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,7 +62,15 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				// FlowState AI Custom Colors
+				flowstate: {
+					purple: '#6D5ACD',
+					blue: '#A7C7E7',
+					teal: '#20B2AA',
+					background: '#F5F5FF',
+					dark: '#2E2E3A',
+				},
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -70,25 +79,27 @@ export default {
 			},
 			keyframes: {
 				'accordion-down': {
-					from: {
-						height: '0'
-					},
-					to: {
-						height: 'var(--radix-accordion-content-height)'
-					}
+					from: { height: '0' },
+					to: { height: 'var(--radix-accordion-content-height)' }
 				},
 				'accordion-up': {
-					from: {
-						height: 'var(--radix-accordion-content-height)'
-					},
-					to: {
-						height: '0'
-					}
+					from: { height: 'var(--radix-accordion-content-height)' },
+					to: { height: '0' }
+				},
+				'pulse-light': {
+					'0%, 100%': { opacity: '1' },
+					'50%': { opacity: '0.7' }
+				},
+				'float': {
+					'0%, 100%': { transform: 'translateY(0px)' },
+					'50%': { transform: 'translateY(-10px)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'pulse-light': 'pulse-light 3s ease-in-out infinite',
+				'float': 'float 6s ease-in-out infinite'
 			}
 		}
 	},
