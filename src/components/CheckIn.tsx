@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useFlowState } from '@/context/FlowStateContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +11,8 @@ import { UserState, EnergyLevel, EmotionalState } from '@/types';
 import { ActivitySquare, BatteryLow, BatteryMedium, BatteryFull, ArrowRight } from 'lucide-react';
 
 const CheckIn: React.FC = () => {
-  const { startSession } = useFlowState();
+  const { setUserState } = useFlowState();
+  const navigate = useNavigate();
   const [energy, setEnergy] = useState<EnergyLevel>('medium');
   const [emotion, setEmotion] = useState<EmotionalState>('neutral');
   const [blockingThoughts, setBlockingThoughts] = useState('');
@@ -22,7 +24,8 @@ const CheckIn: React.FC = () => {
       emotion,
       blockingThoughts: blockingThoughts.trim() || undefined,
     };
-    startSession(userState);
+    setUserState(userState);
+    navigate('/intervention');
   };
 
   return (

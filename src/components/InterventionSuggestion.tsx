@@ -1,16 +1,22 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useFlowState } from '@/context/FlowStateContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Motion } from '@/components/ui/motion';
 import { Intervention } from '@/types';
 import { Play, Brain, Shield, Zap, LightbulbIcon, Timer, ArrowLeft } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
 
 const InterventionSuggestion: React.FC = () => {
   const { userState, getSuggestedInterventions, startSession } = useFlowState();
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  if (!userState) return null;
+  if (!userState) {
+    navigate('/check-in');
+    return null;
+  }
 
   const suggestedInterventions = getSuggestedInterventions();
   const mainIntervention = suggestedInterventions[0] || null;
@@ -49,9 +55,13 @@ const InterventionSuggestion: React.FC = () => {
     }
   };
 
-  const skipIntervention = () => {
-    // Start the session without following the intervention
+  const startWorkingSession = () => {
     startSession(userState);
+    toast({
+      title: "Session Started",
+      description: "Your focus session has been started. Good luck!",
+    });
+    navigate('/session');
   };
 
   return (
@@ -59,7 +69,7 @@ const InterventionSuggestion: React.FC = () => {
       <div className="w-full max-w-md">
         <Card className="w-full bg-white shadow-lg">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold text-flowstate-purple">AI Suggestion</CardTitle>
+            <CardTitle className="text-2xl font-bold text-flowstate-purple">Your Focus Plan</CardTitle>
             <CardDescription>{getStateDescription()}</CardDescription>
           </CardHeader>
           
@@ -110,14 +120,14 @@ const InterventionSuggestion: React.FC = () => {
           
           <CardFooter className="flex flex-col space-y-2">
             <Button
-              onClick={skipIntervention}
+              onClick={startWorkingSession}
               className="w-full bg-flowstate-teal hover:bg-flowstate-teal/90 text-white"
             >
               <Play className="mr-2 h-4 w-4" />
               Start Working Session
             </Button>
             <Button
-              onClick={() => window.history.back()}
+              onClick={() => navigate('/check-in')}
               variant="outline"
               className="w-full border-flowstate-purple text-flowstate-purple hover:bg-flowstate-purple/10"
             >
