@@ -1,14 +1,18 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useFlowState } from '@/context/FlowStateContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Brain, Lightbulb } from 'lucide-react';
+import { useToast } from "@/hooks/use-toast";
 
 const TaskSetup: React.FC = () => {
   const { createTask } = useFlowState();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
 
@@ -16,6 +20,11 @@ const TaskSetup: React.FC = () => {
     e.preventDefault();
     if (title.trim()) {
       createTask(title, description);
+      toast({
+        title: "Task Created",
+        description: "Your task has been created successfully.",
+      });
+      navigate('/');
     }
   };
 
