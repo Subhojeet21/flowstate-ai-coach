@@ -5,10 +5,10 @@ import { useFlowState } from '@/context/FlowStateContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Brain, Play, LineChart, History, PlusCircle, Edit, Timer, Lightbulb } from 'lucide-react';
+import { Brain, Play, LineChart, History, PlusCircle, Edit, Timer, Lightbulb, ClipboardCheck } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
-  const { currentTask, activeSession } = useFlowState();
+  const { currentTask, activeSession, completedTasks, completeCurrentTask } = useFlowState();
   const navigate = useNavigate();
   
   const totalSessions = currentTask?.sessions.length || 0;
@@ -24,6 +24,14 @@ const Dashboard: React.FC = () => {
   
   const viewSessionHistory = () => {
     navigate('/history');
+  };
+
+  const viewTaskHistory = () => {
+    navigate('/task-history');
+  };
+
+  const handleCompleteTask = () => {
+    completeCurrentTask();
   };
 
   return (
@@ -47,14 +55,25 @@ const Dashboard: React.FC = () => {
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <h3 className="text-lg font-medium">Current Task</h3>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 w-8 p-0 text-flowstate-purple"
-                    onClick={editCurrentTask}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
+                  <div className="flex space-x-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-flowstate-purple"
+                      onClick={editCurrentTask}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-flowstate-teal"
+                      onClick={handleCompleteTask}
+                      title="Mark as completed"
+                    >
+                      <ClipboardCheck className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
                 
                 <div className="bg-flowstate-blue/10 p-3 rounded-md">
@@ -116,16 +135,32 @@ const Dashboard: React.FC = () => {
           )}
         </Card>
         
-        {currentTask && totalSessions > 0 && (
+        <div className="flex flex-col space-y-2">
+          {currentTask && totalSessions > 0 && (
+            <Button
+              variant="outline"
+              className="w-full border-flowstate-purple text-flowstate-purple hover:bg-flowstate-purple/10"
+              onClick={viewSessionHistory}
+            >
+              <History className="mr-2 h-4 w-4" />
+              View Session History
+            </Button>
+          )}
+          
           <Button
             variant="outline"
-            className="w-full border-flowstate-purple text-flowstate-purple hover:bg-flowstate-purple/10"
-            onClick={viewSessionHistory}
+            className="w-full border-flowstate-teal text-flowstate-teal hover:bg-flowstate-teal/10"
+            onClick={viewTaskHistory}
           >
-            <History className="mr-2 h-4 w-4" />
-            View Session History
+            <ClipboardCheck className="mr-2 h-4 w-4" />
+            View Completed Tasks
+            {completedTasks.length > 0 && (
+              <span className="ml-1.5 bg-flowstate-teal/20 text-flowstate-teal text-xs rounded-full px-2 py-0.5">
+                {completedTasks.length}
+              </span>
+            )}
           </Button>
-        )}
+        </div>
       </div>
     </div>
   );

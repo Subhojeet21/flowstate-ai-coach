@@ -9,6 +9,7 @@ import InterventionSuggestion from "@/components/InterventionSuggestion";
 import WorkSession from "@/components/WorkSession";
 import PostSessionReview from "@/components/PostSessionReview";
 import SessionHistory from "@/components/SessionHistory";
+import TaskHistory from "@/components/TaskHistory";
 import { Toaster } from "@/components/ui/toaster";
 
 const Index: React.FC = () => {
@@ -22,6 +23,7 @@ const Index: React.FC = () => {
         <Route path="/session" element={<WorkSession />} />
         <Route path="/review" element={<PostSessionReview />} />
         <Route path="/history" element={<SessionHistory />} />
+        <Route path="/task-history" element={<TaskHistory />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <Toaster />

@@ -5,6 +5,7 @@ import { interventions } from '@/data/interventions';
 
 interface FlowStateContextType {
   currentTask: Task | null;
+  completedTasks: Task[];
   activeSession: Session | null;
   interventions: Intervention[];
   userState: UserState | null;
@@ -15,6 +16,7 @@ interface FlowStateContextType {
   setUserState: (state: UserState) => void;
   resetAll: () => void;
   getSuggestedInterventions: () => Intervention[];
+  completeCurrentTask: () => void;
 }
 
 const defaultUserState: UserState = {
@@ -27,10 +29,12 @@ type FlowStateAction =
   | { type: 'START_SESSION'; payload: UserState }
   | { type: 'END_SESSION'; payload: Session['feedback'] }
   | { type: 'SET_USER_STATE'; payload: UserState }
+  | { type: 'COMPLETE_CURRENT_TASK' }
   | { type: 'RESET_ALL' };
 
 interface FlowStateState {
   currentTask: Task | null;
+  completedTasks: Task[];
   sessions: Session[];
   activeSession: Session | null;
   userState: UserState;
@@ -39,6 +43,7 @@ interface FlowStateState {
 
 const initialState: FlowStateState = {
   currentTask: null,
+  completedTasks: [],
   sessions: [],
   activeSession: null,
   userState: defaultUserState,
@@ -110,6 +115,15 @@ const flowStateReducer = (state: FlowStateState, action: FlowStateAction): FlowS
         userState: action.payload,
       };
 
+    case 'COMPLETE_CURRENT_TASK':
+      if (!state.currentTask) return state;
+      
+      return {
+        ...state,
+        completedTasks: [...state.completedTasks, state.currentTask],
+        currentTask: null,
+      };
+
     case 'RESET_ALL':
       return initialState;
 
@@ -137,6 +151,10 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     dispatch({ type: 'SET_USER_STATE', payload: userState });
   };
 
+  const completeCurrentTask = () => {
+    dispatch({ type: 'COMPLETE_CURRENT_TASK' });
+  };
+
   const resetAll = () => {
     dispatch({ type: 'RESET_ALL' });
   };
@@ -156,6 +174,7 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     <FlowStateContext.Provider
       value={{
         currentTask: state.currentTask,
+        completedTasks: state.completedTasks,
         activeSession: state.activeSession,
         interventions: state.interventions,
         userState: state.userState,
@@ -164,6 +183,7 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         startSession,
         endSession,
         setUserState,
+        completeCurrentTask,
         resetAll,
         getSuggestedInterventions,
       }}
