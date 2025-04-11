@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useFlowState } from '@/context/FlowStateContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +11,7 @@ import { Timer, Pause, Play, CheckCircle, RefreshCw } from 'lucide-react';
 const WorkSession: React.FC = () => {
   const { currentTask, activeSession } = useFlowState();
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   const [secondsLeft, setSecondsLeft] = useState(25 * 60); // Default to 25 minutes
   const [isRunning, setIsRunning] = useState(true);
@@ -48,6 +50,15 @@ const WorkSession: React.FC = () => {
     setSecondsLeft(25 * 60);
     setIsRunning(false);
     setIsComplete(false);
+  };
+
+  const endSession = () => {
+    console.log("Session ended by user");
+    toast({
+      title: "Session Ended",
+      description: "Let's review how it went!",
+    });
+    navigate('/review');
   };
 
   const progressPercentage = (1 - secondsLeft / (25 * 60)) * 100;
@@ -127,10 +138,7 @@ const WorkSession: React.FC = () => {
           <CardFooter>
             <Button 
               className="w-full bg-flowstate-teal hover:bg-flowstate-teal/90 text-white"
-              onClick={() => {
-                // In a real app, this would lead to the post-session review
-                console.log("Session ended by user");
-              }}
+              onClick={endSession}
             >
               End Session & Review
             </Button>

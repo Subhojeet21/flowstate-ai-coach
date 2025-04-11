@@ -9,6 +9,7 @@ import InterventionSuggestion from "@/components/InterventionSuggestion";
 import WorkSession from "@/components/WorkSession";
 import PostSessionReview from "@/components/PostSessionReview";
 import SessionHistory from "@/components/SessionHistory";
+import { Toaster } from "@/components/ui/toaster";
 
 const Index: React.FC = () => {
   return (
@@ -23,6 +24,7 @@ const Index: React.FC = () => {
         <Route path="/history" element={<SessionHistory />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <Toaster />
     </FlowStateProvider>
   );
 };

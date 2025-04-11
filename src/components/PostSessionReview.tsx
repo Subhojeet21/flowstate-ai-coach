@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useFlowState } from '@/context/FlowStateContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,20 +9,34 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import { Session } from '@/types';
 import { ThumbsUp, ArrowRight, CheckCircle, FileClock } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const PostSessionReview: React.FC = () => {
   const { endSession } = useFlowState();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  
   const [difficulty, setDifficulty] = useState<Session['feedback']['difficulty']>('okay');
   const [progressMade, setProgressMade] = useState(true);
   const [notes, setNotes] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Call the endSession function from context to save the feedback
     endSession({
       difficulty,
       progressMade,
       notes: notes.trim() || undefined,
     });
+    
+    toast({
+      title: "Session Reviewed",
+      description: "Your feedback has been saved. Great job completing your session!",
+    });
+    
+    // Navigate back to the dashboard
+    navigate('/');
   };
 
   return (
