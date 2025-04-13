@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { UserState, EnergyLevel, EmotionalState } from '@/types';
-import { ActivitySquare, BatteryLow, BatteryMedium, BatteryFull, ArrowRight } from 'lucide-react';
+import { ActivitySquare, BatteryLow, BatteryMedium, BatteryFull, ArrowRight, ArrowLeft } from 'lucide-react';
 
 const CheckIn: React.FC = () => {
   const { setUserState } = useFlowState();
@@ -28,9 +28,25 @@ const CheckIn: React.FC = () => {
     navigate('/intervention');
   };
 
+  const handleBack = () => {
+    navigate(-1);
+  };
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
       <div className="w-full max-w-md">
+        <div className="flex justify-between items-center mb-6">
+          <Button 
+            variant="ghost" 
+            onClick={handleBack} 
+            className="p-2"
+          >
+            <ArrowLeft className="h-5 w-5 text-flowstate-purple" />
+          </Button>
+          <div className="text-center text-xl font-bold text-flowstate-purple">Pre-Session Check-In</div>
+          <div className="w-8"></div> {/* Space balancer for centering */}
+        </div>
+        
         <Card className="w-full bg-white shadow-md">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold text-flowstate-purple">Pre-Session Check-In</CardTitle>

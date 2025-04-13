@@ -10,7 +10,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FormLabel } from '@/components/ui/form';
-import { Brain, Lightbulb, CalendarIcon, Flag } from 'lucide-react';
+import { Brain, Lightbulb, CalendarIcon, Flag, ArrowLeft } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { format } from 'date-fns';
 import { PriorityLevel } from '@/types';
@@ -37,14 +37,26 @@ const TaskSetup: React.FC = () => {
     }
   };
 
+  const handleBack = () => {
+    navigate(-1);
+  };
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
       <div className="w-full max-w-md">
-        <div className="flex justify-center mb-6">
-          <div className="relative flex items-center justify-center w-24 h-24 mb-2">
+        <div className="flex justify-between items-center mb-6">
+          <Button 
+            variant="ghost" 
+            onClick={handleBack} 
+            className="p-2"
+          >
+            <ArrowLeft className="h-5 w-5 text-flowstate-purple" />
+          </Button>
+          <div className="relative flex items-center justify-center w-24 h-24">
             <Brain className="w-16 h-16 text-flowstate-purple animate-pulse-light" />
             <div className="absolute inset-0 bg-flowstate-purple/10 rounded-full animate-pulse-light" />
           </div>
+          <div className="w-8"></div> {/* Space balancer for centering */}
         </div>
         
         <Card className="w-full bg-white shadow-md">
@@ -132,15 +144,18 @@ const TaskSetup: React.FC = () => {
               </div>
             </CardContent>
             
-            <CardFooter>
+            <CardFooter className="flex flex-col space-y-2">
               <Button
                 type="submit"
                 className="w-full bg-flowstate-purple hover:bg-flowstate-purple/90 text-white"
                 disabled={!title.trim()}
               >
                 <Lightbulb className="mr-2 h-4 w-4" />
-                Start FlowState Journey
+                Create Task
               </Button>
+              <p className="text-xs text-center text-muted-foreground">
+                You can create multiple tasks and select any task to work on later
+              </p>
             </CardFooter>
           </form>
         </Card>
