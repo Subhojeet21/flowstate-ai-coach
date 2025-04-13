@@ -128,7 +128,7 @@ const Dashboard: React.FC = () => {
                 <div className="flex justify-between items-center">
                   <h3 className="text-lg font-medium">Current Task</h3>
                   <div className="flex space-x-1">
-                    <Button
+                    {/*<Button
                       variant="ghost"
                       size="sm"
                       className="h-8 w-8 p-0 text-flowstate-purple"
@@ -136,7 +136,7 @@ const Dashboard: React.FC = () => {
                       title="Create a new task"
                     >
                       <Edit className="h-4 w-4" />
-                    </Button>
+                    </Button>*/}
                     <Button
                       variant="ghost"
                       size="sm"
@@ -227,21 +227,21 @@ const Dashboard: React.FC = () => {
                 <Play className="mr-2 h-4 w-4" />
                 Start Focus Session
               </Button>
-              <Button
+              {/*<Button
                 onClick={editCurrentTask}
                 variant="ghost"
                 className="w-full text-flowstate-purple border border-flowstate-purple/50 hover:bg-flowstate-purple/10"
               >
                 <Edit className="mr-2 h-4 w-4" />
                 Edit Task
-              </Button>
+              </Button>*/}
               <Button
                   onClick={editCurrentTask}
                   className="bg-flowstate-purple hover:bg-flowstate-purple/90 text-white"
                 >
                   <PlusCircle className="mr-2 h-4 w-4" />
                   Create New Task
-                </Button>
+              </Button>
             </CardFooter>
           )}
         </Card>
