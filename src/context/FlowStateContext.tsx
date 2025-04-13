@@ -1,6 +1,5 @@
-
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { Task, Session, UserState, Intervention } from '@/types';
+import { Task, Session, UserState, Intervention, PriorityLevel } from '@/types';
 import { interventions } from '@/data/interventions';
 
 interface FlowStateContextType {
@@ -10,7 +9,7 @@ interface FlowStateContextType {
   interventions: Intervention[];
   userState: UserState | null;
   isInSession: boolean;
-  createTask: (title: string, description?: string) => void;
+  createTask: (title: string, description?: string, priority?: PriorityLevel, dueDate?: Date) => void;
   startSession: (state: UserState) => void;
   endSession: (feedback: Session['feedback']) => void;
   setUserState: (state: UserState) => void;
@@ -25,7 +24,7 @@ const defaultUserState: UserState = {
 };
 
 type FlowStateAction =
-  | { type: 'CREATE_TASK'; payload: { title: string; description?: string } }
+  | { type: 'CREATE_TASK'; payload: { title: string; description?: string; priority: PriorityLevel; dueDate?: Date } }
   | { type: 'START_SESSION'; payload: UserState }
   | { type: 'END_SESSION'; payload: Session['feedback'] }
   | { type: 'SET_USER_STATE'; payload: UserState }
@@ -59,6 +58,8 @@ const flowStateReducer = (state: FlowStateState, action: FlowStateAction): FlowS
         id: Date.now().toString(),
         title: action.payload.title,
         description: action.payload.description,
+        priority: action.payload.priority,
+        dueDate: action.payload.dueDate,
         createdAt: new Date(),
         sessions: [],
       };
@@ -135,8 +136,8 @@ const flowStateReducer = (state: FlowStateState, action: FlowStateAction): FlowS
 export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(flowStateReducer, initialState);
 
-  const createTask = (title: string, description?: string) => {
-    dispatch({ type: 'CREATE_TASK', payload: { title, description } });
+  const createTask = (title: string, description?: string, priority: PriorityLevel = 'medium', dueDate?: Date) => {
+    dispatch({ type: 'CREATE_TASK', payload: { title, description, priority, dueDate } });
   };
 
   const startSession = (userState: UserState) => {

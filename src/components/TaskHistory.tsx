@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { formatDistanceToNow } from 'date-fns';
-import { ArrowLeft, Calendar, Clock, CheckCircle } from 'lucide-react';
+import { formatDistanceToNow, format } from 'date-fns';
+import { ArrowLeft, Calendar, Clock, CheckCircle, Flag } from 'lucide-react';
 
 const TaskHistory: React.FC = () => {
   const { completedTasks } = useFlowState();
@@ -33,6 +33,15 @@ const TaskHistory: React.FC = () => {
     return task.sessions.length;
   };
 
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'text-red-500';
+      case 'medium': return 'text-amber-500';
+      case 'low': return 'text-green-500';
+      default: return 'text-gray-500';
+    }
+  };
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
       <div className="w-full max-w-4xl">
@@ -54,6 +63,8 @@ const TaskHistory: React.FC = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Task</TableHead>
+                      <TableHead>Priority</TableHead>
+                      <TableHead>Due Date</TableHead>
                       <TableHead>Created</TableHead>
                       <TableHead>Sessions</TableHead>
                       <TableHead>Total Time</TableHead>
@@ -69,6 +80,22 @@ const TaskHistory: React.FC = () => {
                               <span className="text-xs text-muted-foreground">{task.description}</span>
                             )}
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className={`flex items-center ${getPriorityColor(task.priority)}`}>
+                            <Flag className="mr-2 h-4 w-4" />
+                            {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {task.dueDate ? (
+                            <div className="flex items-center">
+                              <Calendar className="mr-2 h-4 w-4 text-flowstate-blue" />
+                              {format(new Date(task.dueDate), 'PP')}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center">

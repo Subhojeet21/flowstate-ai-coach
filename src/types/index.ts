@@ -1,6 +1,7 @@
 
 export type EmotionalState = 'eager' | 'neutral' | 'anxious' | 'overwhelmed';
 export type EnergyLevel = 'low' | 'medium' | 'high';
+export type PriorityLevel = 'low' | 'medium' | 'high';
 
 export interface UserState {
   energy: EnergyLevel;
@@ -12,6 +13,8 @@ export interface Task {
   id: string;
   title: string;
   description?: string;
+  priority: PriorityLevel;
+  dueDate?: Date;
   createdAt: Date;
   sessions: Session[];
 }
