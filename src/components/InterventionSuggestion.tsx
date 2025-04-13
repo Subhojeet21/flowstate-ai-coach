@@ -61,7 +61,8 @@ const InterventionSuggestion: React.FC = () => {
   };
 
   const startWorkingSession = () => {
-    startSession(userState);
+    startSession(userState, { id: selectedInterventionId, title: mainIntervention?.title || '', type: mainIntervention?.type || 'emotion',description: mainIntervention?.description || '', duration: mainIntervention?.duration || 0, 
+      forEnergy: mainIntervention?.forEnergy || ['medium'], forEmotions: mainIntervention?.forEmotions || ['neutral']});
     toast({
       title: "Session Started",
       description: "Your focus session has been started. Good luck!",
