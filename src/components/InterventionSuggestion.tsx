@@ -61,7 +61,7 @@ const InterventionSuggestion: React.FC = () => {
   };
 
   const startWorkingSession = () => {
-    startSession(userState, { id: selectedInterventionId, title: mainIntervention?.title || '', type: mainIntervention?.type || 'emotion',description: mainIntervention?.description || '', duration: mainIntervention?.duration || 0, 
+    startSession(userState, { id: mainIntervention?.id || '3', title: mainIntervention?.title || '', type: mainIntervention?.type || 'emotion',description: mainIntervention?.description || '', duration: mainIntervention?.duration || 0, 
       forEnergy: mainIntervention?.forEnergy || ['medium'], forEmotions: mainIntervention?.forEmotions || ['neutral']});
     toast({
       title: "Session Started",

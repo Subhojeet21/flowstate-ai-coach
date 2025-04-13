@@ -22,6 +22,8 @@ const WorkSession: React.FC = () => {
   const activeIntervention = activeSession?.selectedIntervention || suggestedInterventions[0] || null;
   
   const sessionDuration = (activeIntervention ? activeIntervention.duration : 25) * 60;
+  console.log(activeIntervention);
+  const activeInterventionId = activeIntervention ? activeIntervention.id : 3;
   const [secondsLeft, setSecondsLeft] = useState(sessionDuration); 
   const [isRunning, setIsRunning] = useState(true);
   const [isComplete, setIsComplete] = useState(false);
@@ -127,20 +129,163 @@ const WorkSession: React.FC = () => {
                 <Timer className="h-4 w-4 mr-2 text-flowstate-purple" />
                 Tips for maintaining focus:
               </h3>
-              <ul className="text-sm space-y-2">
-                <li className="flex items-start">
-                  <CheckCircle className="h-4 w-4 mr-2 text-flowstate-teal mt-0.5" />
-                  <span>Stay in the present moment and focus only on this task</span>
-                </li>
-                <li className="flex items-start">
-                  <CheckCircle className="h-4 w-4 mr-2 text-flowstate-teal mt-0.5" />
-                  <span>If distracted, gently bring your attention back to the task</span>
-                </li>
-                <li className="flex items-start">
-                  <CheckCircle className="h-4 w-4 mr-2 text-flowstate-teal mt-0.5" />
-                  <span>Remember your "why" - what makes this task important to you</span>
-                </li>
-              </ul>
+              {activeInterventionId === '1' && (
+                <ul className="text-sm space-y-2">
+                  <li className="flex items-start">
+                    <CheckCircle className="h-4 w-4 mr-2 text-flowstate-teal mt-0.5" />
+                    <span>Take a comfortable seat.</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-4 w-4 mr-2 text-flowstate-teal mt-0.5" />
+                    <span>Place one hand on your belly and the other on your chest.</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-4 w-4 mr-2 text-flowstate-teal mt-0.5" />
+                    <span>Inhale deeply through your nose for a count of 4, hold for 7.</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-4 w-4 mr-2 text-flowstate-teal mt-0.5" />
+                    <span>Exhale slowly through pursed lips for a count of 8.</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-4 w-4 mr-2 text-flowstate-teal mt-0.5" />
+                    <span>Repeat for 2 minutes.</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-4 w-4 mr-2 text-flowstate-teal mt-0.5" />
+                    <span>Diaphragmatic breathing and the 4-7-8 method are excellent options.</span>
+                  </li>
+                </ul>
+              )}
+              {activeInterventionId === '2' && (
+                <ul className="text-sm space-y-2">
+                  <li className="flex items-start">
+                    <CheckCircle className="h-4 w-4 mr-2 text-flowstate-teal mt-0.5" />
+                    <span>Pick the smallest possible action related to your task.</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-4 w-4 mr-2 text-flowstate-teal mt-0.5" />
+                    <span>Completing this will help build momentum.</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-4 w-4 mr-2 text-flowstate-teal mt-0.5" />
+                    <span>Micro-tasks reduce mental weight and make large goals more approachable.</span>
+                  </li>
+                </ul>
+              )}
+              {activeInterventionId === '3' && (
+                <ul className="text-sm space-y-2">
+                  <li className="flex items-start">
+                    <CheckCircle className="h-4 w-4 mr-2 text-flowstate-teal mt-0.5" />
+                    <span>Stay in the present moment and focus only on this task</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-4 w-4 mr-2 text-flowstate-teal mt-0.5" />
+                    <span>If distracted, gently bring your attention back to the task</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-4 w-4 mr-2 text-flowstate-teal mt-0.5" />
+                    <span>Remember your "why" - what makes this task important to you</span>
+                  </li>
+                </ul>
+              )}
+              {activeInterventionId === '4' && (
+                <ul className="text-sm space-y-2">
+                  <li className="flex items-start">
+                    <CheckCircle className="h-4 w-4 mr-2 text-flowstate-teal mt-0.5" />
+                    <span>Pause for a moment.</span>
+                  </li>  
+                  <li className="flex items-start">
+                    <CheckCircle className="h-4 w-4 mr-2 text-flowstate-teal mt-0.5" />
+                    <span>Ask yourself - Why is completing this task important.</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-4 w-4 mr-2 text-flowstate-teal mt-0.5" />
+                    <span>Think about how does it align with your long-term goals.</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-4 w-4 mr-2 text-flowstate-teal mt-0.5" />
+                    <span>Reflection strengthens self-awareness and motivation.</span>
+                  </li>
+
+                </ul>
+              )}
+              {activeInterventionId === '5' && (
+                <ul className="text-sm space-y-2">
+                  <li className="flex items-start">
+                    <CheckCircle className="h-4 w-4 mr-2 text-flowstate-teal mt-0.5" />
+                    <span>Set this time for uninterrupted work.</span>
+                  </li>  
+                  <li className="flex items-start">
+                    <CheckCircle className="h-4 w-4 mr-2 text-flowstate-teal mt-0.5" />
+                    <span>Silence notifications and clear your workspace.</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-4 w-4 mr-2 text-flowstate-teal mt-0.5" />
+                    <span>Focus entirely on making substantial progress.</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-4 w-4 mr-2 text-flowstate-teal mt-0.5" />
+                    <span>Extended focus blocks help tackle complex tasks effectively.</span>
+                  </li>
+
+                </ul>
+              )}
+              {activeInterventionId === '6' && (
+                <ul className="text-sm space-y-2">
+                  <li className="flex items-start">
+                    <CheckCircle className="h-4 w-4 mr-2 text-flowstate-teal mt-0.5" />
+                    <span>If you feel overwhelmed, reframe your thoughts.</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-4 w-4 mr-2 text-flowstate-teal mt-0.5" />
+                    <span>Challenge negative thoughts about the task.</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-4 w-4 mr-2 text-flowstate-teal mt-0.5" />
+                    <span>Repeat-This is challenging, but I can simplify and succeed.</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-4 w-4 mr-2 text-flowstate-teal mt-0.5" />
+                    <span>Reframing helps shift perspective and reduce anxiety.</span>
+                  </li>
+
+                </ul>
+              )}
+              {activeInterventionId === '7' && (
+                <ul className="text-sm space-y-2">
+                  <li className="flex items-start">
+                    <CheckCircle className="h-4 w-4 mr-2 text-flowstate-teal mt-0.5" />
+                    <span>Spend 5 minutes tidying up your desk or workspace.</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-4 w-4 mr-2 text-flowstate-teal mt-0.5" />
+                    <span>Remove distractions like unnecessary papers or devices.</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-4 w-4 mr-2 text-flowstate-teal mt-0.5" />
+                    <span>A clean environment fosters clarity and productivity.</span>
+                  </li>
+
+                </ul>
+              )}
+              {activeInterventionId === '8' && (
+                <ul className="text-sm space-y-2">
+                  <li className="flex items-start">
+                    <CheckCircle className="h-4 w-4 mr-2 text-flowstate-teal mt-0.5" />
+                    <span>Close your eyes & visualize yourself completing the task successfully.</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-4 w-4 mr-2 text-flowstate-teal mt-0.5" />
+                    <span>Picture how accomplished you’ll feel once you complete the task.</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-4 w-4 mr-2 text-flowstate-teal mt-0.5" />
+                    <span>Visualization boosts motivation by reinforcing positive outcomes.</span>
+                  </li>
+
+                </ul>
+              )}
             </div>
           </CardContent>
           
