@@ -132,7 +132,8 @@ const Dashboard: React.FC = () => {
                       variant="ghost"
                       size="sm"
                       className="h-8 w-8 p-0 text-flowstate-purple"
-                      onClick={editCurrentTask}
+                      onClick={editCurrentTask} 
+                      title="Create a new task"
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
