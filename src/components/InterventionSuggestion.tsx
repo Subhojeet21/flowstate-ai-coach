@@ -91,7 +91,7 @@ const InterventionSuggestion: React.FC = () => {
                 <div className="mt-6">
                   <h4 className="font-medium text-center mb-2">Alternative Suggestions</h4>
                   <div className="grid grid-cols-1 gap-2">
-                    {suggestedInterventions.slice(1, 3).map((intervention) => (
+                    {suggestedInterventions.slice(1, suggestedInterventions.length).map((intervention) => (
                       <div 
                         key={intervention.id} 
                         className="flex items-center p-3 bg-muted/50 rounded-md hover:bg-muted transition-colors"
