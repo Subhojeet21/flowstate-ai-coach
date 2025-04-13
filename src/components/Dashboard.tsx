@@ -235,6 +235,13 @@ const Dashboard: React.FC = () => {
                 <Edit className="mr-2 h-4 w-4" />
                 Edit Task
               </Button>
+              <Button
+                  onClick={editCurrentTask}
+                  className="bg-flowstate-purple hover:bg-flowstate-purple/90 text-white"
+                >
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Create New Task
+                </Button>
             </CardFooter>
           )}
         </Card>
