@@ -22,7 +22,7 @@ const WorkSession: React.FC = () => {
   const activeIntervention = activeSession?.selectedIntervention || suggestedInterventions[0] || null;
   
   const sessionDuration = (activeIntervention ? activeIntervention.duration : 25) * 60;
-  console.log(activeIntervention);
+  //console.log(activeIntervention);
   const activeInterventionId = activeIntervention ? activeIntervention.id : 3;
   const [secondsLeft, setSecondsLeft] = useState(sessionDuration); 
   const [isRunning, setIsRunning] = useState(true);
@@ -64,7 +64,7 @@ const WorkSession: React.FC = () => {
   };
 
   const endSession = () => {
-    console.log("Session ended by user");
+    //console.log("Session ended by user");
     toast({
       title: "Session Ended",
       description: "Let's review how it went!",
