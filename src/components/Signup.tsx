@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useFlowState } from '@/context/FlowStateContext';
@@ -6,25 +5,43 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Brain, LogIn } from 'lucide-react';
+import { Brain, UserPlus } from 'lucide-react';
+import { toast } from 'sonner';
 
-const Login: React.FC = () => {
+const Signup: React.FC = () => {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { loginUser } = useFlowState();
+  const { registerUser } = useFlowState();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Basic validation
+    if (!name || !email || !password) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    
+    if (password !== confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
-      await loginUser(email, password);
+      await registerUser(email, password, name);
       navigate('/');
     } catch (error) {
-      // Error is already handled in the context
-      console.error('Login failed:', error);
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error('Failed to register');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -42,12 +59,23 @@ const Login: React.FC = () => {
         
         <Card className="w-full bg-white shadow-md">
           <CardHeader className="pb-2">
-            <CardTitle className="text-2xl font-bold text-flowstate-purple">FlowState AI</CardTitle>
-            <CardDescription>Log in to track your focus progress</CardDescription>
+            <CardTitle className="text-2xl font-bold text-flowstate-purple">Create Account</CardTitle>
+            <CardDescription>Sign up to start tracking your focus progress</CardDescription>
           </CardHeader>
           
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Name</Label>
+                <Input 
+                  id="name" 
+                  type="text" 
+                  placeholder="Your name" 
+                  value={name} 
+                  onChange={(e) => setName(e.target.value)}
+                  required 
+                />
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input 
@@ -64,30 +92,38 @@ const Login: React.FC = () => {
                 <Input 
                   id="password" 
                   type="password" 
-                  placeholder="Your password" 
+                  placeholder="Create a password" 
                   value={password} 
                   onChange={(e) => setPassword(e.target.value)}
                   required 
                 />
               </div>
-              <p className="text-xs text-muted-foreground">
-                For demo purposes, you can use any email and password.
-              </p>
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Input 
+                  id="confirmPassword" 
+                  type="password" 
+                  placeholder="Confirm your password" 
+                  value={confirmPassword} 
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required 
+                />
+              </div>
             </CardContent>
             
-            <CardFooter>
+            <CardFooter className="flex flex-col space-y-3">
               <Button 
                 type="submit" 
                 className="w-full bg-flowstate-purple hover:bg-flowstate-purple/90 text-white"
                 disabled={isLoading}
               >
-                <LogIn className="mr-2 h-4 w-4" />
-                {isLoading ? 'Logging in...' : 'Log In'}
+                <UserPlus className="mr-2 h-4 w-4" />
+                {isLoading ? 'Creating Account...' : 'Sign Up'}
               </Button>
-              <div className="text-sm text-center mt-3">
-                Don't have an account?{' '}
-                <Link to="/signup" className="text-flowstate-purple hover:underline">
-                  Sign up
+              <div className="text-sm text-center">
+                Already have an account?{' '}
+                <Link to="/login" className="text-flowstate-purple hover:underline">
+                  Log in
                 </Link>
               </div>
             </CardFooter>
@@ -98,4 +134,4 @@ const Login: React.FC = () => {
   );
 };
 
-export default Login;
+export default Signup;

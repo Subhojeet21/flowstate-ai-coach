@@ -1,8 +1,9 @@
 
-import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useState } from 'react';
 import { Task, Session, UserState, Intervention, PriorityLevel, User } from '@/types';
 import { interventions } from '@/data/interventions';
 import { toast } from "sonner";
+import * as api from '@/services/api';
 
 interface FlowStateContextType {
   currentUser: User | null;
@@ -13,6 +14,7 @@ interface FlowStateContextType {
   interventions: Intervention[];
   userState: UserState | null;
   isInSession: boolean;
+  isLoading: boolean;
   createTask: (title: string, description?: string, priority?: PriorityLevel, dueDate?: Date) => void;
   startSession: (state: UserState) => void;
   endSession: (feedback: Session['feedback']) => void;
@@ -21,7 +23,8 @@ interface FlowStateContextType {
   getSuggestedInterventions: () => Intervention[];
   completeCurrentTask: () => void;
   setCurrentTask: (taskId: string) => void;
-  loginUser: (email: string, password: string) => void;
+  loginUser: (email: string, password: string) => Promise<void>;
+  registerUser: (email: string, password: string, name: string) => Promise<void>;
   logoutUser: () => void;
   getTodaysTasks: () => Task[];
 }
@@ -31,17 +34,6 @@ const defaultUserState: UserState = {
   emotion: 'neutral',
 };
 
-const mockUser: User = {
-  id: '1',
-  email: 'user@example.com',
-  name: 'Demo User',
-  createdAt: new Date(),
-  lastLoginAt: new Date(),
-  streak: {
-    count: 7,
-    lastActiveDate: new Date(),
-  }
-};
 
 type FlowStateAction =
   | { type: 'CREATE_TASK'; payload: { title: string; description?: string; priority: PriorityLevel; dueDate?: Date } }
@@ -50,8 +42,7 @@ type FlowStateAction =
   | { type: 'SET_USER_STATE'; payload: UserState }
   | { type: 'COMPLETE_CURRENT_TASK' }
   | { type: 'SET_CURRENT_TASK'; payload: string }
-  | { type: 'LOGIN_USER'; payload: { email: string; password: string } }
-  | { type: 'LOGOUT_USER' }
+  | { type: 'SET_USER'; payload: User | null }
   | { type: 'RESET_ALL' };
 
 interface FlowStateState {
@@ -199,18 +190,10 @@ const flowStateReducer = (state: FlowStateState, action: FlowStateAction): FlowS
         currentTask: taskToSet,
       };
 
-    case 'LOGIN_USER':
-      // In a real app, this would authenticate against a backend
-      // For now, we'll use a mock user
+    case 'SET_USER':
       return {
         ...state,
-        currentUser: mockUser,
-      };
-
-    case 'LOGOUT_USER':
-      return {
-        ...state,
-        currentUser: null,
+        currentUser: action.payload,
       };
 
     case 'RESET_ALL':
@@ -223,6 +206,26 @@ const flowStateReducer = (state: FlowStateState, action: FlowStateAction): FlowS
 
 export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(flowStateReducer, initialState);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Check for existing user session on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      setIsLoading(true);
+      try {
+        const user = await api.getCurrentUser();
+        if (user) {
+          dispatch({ type: 'SET_USER', payload: user });
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
 
   const createTask = (title: string, description?: string, priority: PriorityLevel = 'medium', dueDate?: Date) => {
     dispatch({ type: 'CREATE_TASK', payload: { title, description, priority, dueDate } });
@@ -250,13 +253,45 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     dispatch({ type: 'SET_CURRENT_TASK', payload: taskId });
   };
 
-  const loginUser = (email: string, password: string) => {
-    dispatch({ type: 'LOGIN_USER', payload: { email, password } });
-    toast.success("Logged in successfully");
+  const loginUser = async (email: string, password: string) => {
+    setIsLoading(true);
+    try {
+      const user = await api.login(email, password);
+      dispatch({ type: 'SET_USER', payload: user });
+      toast.success("Logged in successfully");
+    } catch (error) {
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("Login failed");
+      }
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const registerUser = async (email: string, password: string, name: string) => {
+    setIsLoading(true);
+    try {
+      const user = await api.register(email, password, name);
+      dispatch({ type: 'SET_USER', payload: user });
+      toast.success("Account created successfully");
+    } catch (error) {
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("Registration failed");
+      }
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const logoutUser = () => {
-    dispatch({ type: 'LOGOUT_USER' });
+    api.logout();
+    dispatch({ type: 'SET_USER', payload: null });
     toast.success("Logged out successfully");
   };
 
@@ -308,6 +343,7 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         interventions: state.interventions,
         userState: state.userState,
         isInSession: !!state.activeSession,
+        isLoading,
         createTask,
         startSession,
         endSession,
@@ -317,6 +353,7 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         getSuggestedInterventions,
         setCurrentTask,
         loginUser,
+        registerUser,
         logoutUser,
         getTodaysTasks,
       }}

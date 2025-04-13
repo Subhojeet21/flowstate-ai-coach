@@ -23,12 +23,6 @@ const Dashboard: React.FC = () => {
   } = useFlowState();
   const navigate = useNavigate();
   
-  // If no user is logged in, redirect to login
-  React.useEffect(() => {
-    if (!currentUser) {
-      navigate('/login');
-    }
-  }, [currentUser, navigate]);
   
   // Get today's tasks and sort by priority
   const todaysTasks = getTodaysTasks();
@@ -86,7 +80,10 @@ const Dashboard: React.FC = () => {
           
           <div className="flex flex-col items-end">
             <div className="flex items-center space-x-2 mb-1">
-              <span className="text-sm font-medium">{currentUser.email}</span>
+              <div className="flex flex-col items-end">
+                <span className="text-sm font-medium">{currentUser.name || 'User'}</span>
+                <span className="text-xs text-muted-foreground">{currentUser.email}</span>
+              </div>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
