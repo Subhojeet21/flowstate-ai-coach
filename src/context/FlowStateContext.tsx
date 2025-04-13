@@ -1,5 +1,5 @@
-
 import React, { createContext, useContext, useReducer, useEffect, useState } from 'react';
+
 import { Task, Session, UserState, Intervention, PriorityLevel, User } from '@/types';
 import { interventions } from '@/data/interventions';
 import { toast } from "sonner";
@@ -86,7 +86,7 @@ const flowStateReducer = (state: FlowStateState, action: FlowStateAction): FlowS
       return {
         ...state,
         tasks: [...state.tasks, newTask],
-        currentTask: state.currentTask || newTask,
+        currentTask: state.currentTask === null ? newTask : state.currentTask,
       };
 
     case 'START_SESSION':
@@ -121,7 +121,6 @@ const flowStateReducer = (state: FlowStateState, action: FlowStateAction): FlowS
       
       const updatedSessions = [...state.sessions, endedSession];
       
-      // Update the current task with the new session
       const updatedTasks = state.tasks.map(task => 
         task.id === state.currentTask?.id 
           ? { ...task, sessions: [...task.sessions, endedSession] } 
@@ -132,7 +131,6 @@ const flowStateReducer = (state: FlowStateState, action: FlowStateAction): FlowS
         ? { ...state.currentTask, sessions: [...state.currentTask.sessions, endedSession] }
         : null;
 
-      // Update streak
       let updatedUser = state.currentUser;
       if (updatedUser) {
         const today = new Date().toDateString();
@@ -316,17 +314,14 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     
     return state.tasks
       .filter(task => {
-        // If due date is today or before today and not completed
         if (task.dueDate) {
           const dueDate = new Date(task.dueDate);
           dueDate.setHours(0, 0, 0, 0);
           return dueDate <= today && !task.completed;
         }
-        // Include tasks with no due date
         return !task.completed;
       })
       .sort((a, b) => {
-        // Sort by priority: high -> medium -> low
         const priorityOrder = { high: 0, medium: 1, low: 2 };
         return priorityOrder[a.priority] - priorityOrder[b.priority];
       });
