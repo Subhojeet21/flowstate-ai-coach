@@ -16,7 +16,7 @@ interface FlowStateContextType {
   isInSession: boolean;
   isLoading: boolean;
   createTask: (title: string, description?: string, priority?: PriorityLevel, dueDate?: Date) => void;
-  startSession: (state: UserState) => void;
+  startSession: (state: UserState, selectedIntervention?: Intervention) => void;
   endSession: (feedback: Session['feedback']) => void;
   setUserState: (state: UserState) => void;
   resetAll: () => void;
@@ -35,10 +35,9 @@ const defaultUserState: UserState = {
   emotion: 'neutral',
 };
 
-
 type FlowStateAction =
   | { type: 'CREATE_TASK'; payload: { title: string; description?: string; priority: PriorityLevel; dueDate?: Date } }
-  | { type: 'START_SESSION'; payload: UserState }
+  | { type: 'START_SESSION'; payload: { state: UserState; selectedIntervention?: Intervention } }
   | { type: 'END_SESSION'; payload: Session['feedback'] }
   | { type: 'SET_USER_STATE'; payload: UserState }
   | { type: 'COMPLETE_CURRENT_TASK' }
@@ -98,14 +97,15 @@ const flowStateReducer = (state: FlowStateState, action: FlowStateAction): FlowS
         id: Date.now().toString(),
         taskId: state.currentTask.id,
         startTime: new Date(),
-        state: action.payload,
+        state: action.payload.state,
         completed: false,
+        selectedIntervention: action.payload.selectedIntervention,
       };
       
       return {
         ...state,
         activeSession: newSession,
-        userState: action.payload,
+        userState: action.payload.state,
       };
 
     case 'END_SESSION':
@@ -242,8 +242,14 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     toast.success("Task created successfully");
   };
 
-  const startSession = (userState: UserState) => {
-    dispatch({ type: 'START_SESSION', payload: userState });
+  const startSession = (userState: UserState, selectedIntervention?: Intervention) => {
+    dispatch({ 
+      type: 'START_SESSION', 
+      payload: { 
+        state: userState,
+        selectedIntervention 
+      } 
+    });
   };
 
   const endSession = (feedback: Session['feedback']) => {

@@ -40,6 +40,7 @@ export interface Session {
   duration?: number; // in minutes
   state: UserState;
   completed: boolean;
+  selectedIntervention?: Intervention;
   feedback?: {
     difficulty: 'easy' | 'okay' | 'hard';
     progressMade: boolean;

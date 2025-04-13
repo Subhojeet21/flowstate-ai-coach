@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFlowState } from '@/context/FlowStateContext';
@@ -13,21 +12,19 @@ const WorkSession: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const { userState, getSuggestedInterventions, startSession } = useFlowState();
+  const { userState, getSuggestedInterventions } = useFlowState();
   if (!userState) {
     navigate('/check-in');
     return null;
   }
 
   const suggestedInterventions = getSuggestedInterventions();
-  const mainIntervention = suggestedInterventions[0] || null;
+  const activeIntervention = activeSession?.selectedIntervention || suggestedInterventions[0] || null;
   
-  //const [secondsLeft, setSecondsLeft] = useState(25 * 60); // Default to 25 minutes
-  const [secondsLeft, setSecondsLeft] = useState((mainIntervention ? mainIntervention.duration : 5) * 60); 
+  const sessionDuration = (activeIntervention ? activeIntervention.duration : 25) * 60;
+  const [secondsLeft, setSecondsLeft] = useState(sessionDuration); 
   const [isRunning, setIsRunning] = useState(true);
   const [isComplete, setIsComplete] = useState(false);
-
-  
 
   useEffect(() => {
     let interval: number | undefined;
@@ -59,7 +56,7 @@ const WorkSession: React.FC = () => {
   };
 
   const resetTimer = () => {
-    setSecondsLeft(25 * 60);
+    setSecondsLeft(sessionDuration);
     setIsRunning(false);
     setIsComplete(false);
   };
@@ -73,8 +70,7 @@ const WorkSession: React.FC = () => {
     navigate('/review');
   };
 
-  //const progressPercentage = (1 - secondsLeft / (25 * 60)) * 100;
-  const progressPercentage = (1 - secondsLeft / ((mainIntervention ? mainIntervention.duration : 5) * 60)) * 100;
+  const progressPercentage = (1 - secondsLeft / sessionDuration) * 100;
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">

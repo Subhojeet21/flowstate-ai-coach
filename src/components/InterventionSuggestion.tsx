@@ -1,17 +1,19 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFlowState } from '@/context/FlowStateContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Intervention } from '@/types';
-import { Play, Brain, Shield, Zap, LightbulbIcon, Timer, ArrowLeft } from 'lucide-react';
+import { Play, Brain, Shield, Zap, LightbulbIcon, Timer, ArrowLeft, Check } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const InterventionSuggestion: React.FC = () => {
   const { userState, getSuggestedInterventions, startSession } = useFlowState();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [selectedInterventionId, setSelectedInterventionId] = useState<string | null>(null);
 
   if (!userState) {
     navigate('/check-in');
@@ -19,7 +21,10 @@ const InterventionSuggestion: React.FC = () => {
   }
 
   const suggestedInterventions = getSuggestedInterventions();
-  const mainIntervention = suggestedInterventions[0] || null;
+  // If no intervention is selected, default to the first one
+  const mainIntervention = selectedInterventionId
+    ? suggestedInterventions.find(i => i.id === selectedInterventionId)
+    : suggestedInterventions[0] || null;
 
   const getInterventionIcon = (type: Intervention['type']) => {
     switch (type) {
@@ -64,6 +69,10 @@ const InterventionSuggestion: React.FC = () => {
     navigate('/session');
   };
 
+  const handleInterventionSelect = (interventionId: string) => {
+    setSelectedInterventionId(interventionId);
+  };
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
       <div className="w-full max-w-md">
@@ -90,12 +99,25 @@ const InterventionSuggestion: React.FC = () => {
               {suggestedInterventions.length > 1 && (
                 <div className="mt-6">
                   <h4 className="font-medium text-center mb-2">Alternative Suggestions</h4>
-                  <div className="grid grid-cols-1 gap-2">
-                    {suggestedInterventions.slice(1, suggestedInterventions.length).map((intervention) => (
+                  <RadioGroup 
+                    value={selectedInterventionId || suggestedInterventions[0].id} 
+                    onValueChange={handleInterventionSelect}
+                    className="grid grid-cols-1 gap-2"
+                  >
+                    {suggestedInterventions.map((intervention) => (
                       <div 
                         key={intervention.id} 
-                        className="flex items-center p-3 bg-muted/50 rounded-md hover:bg-muted transition-colors"
+                        className={`flex items-center p-3 rounded-md transition-colors ${
+                          selectedInterventionId === intervention.id 
+                            ? 'bg-flowstate-purple/10 border border-flowstate-purple/30' 
+                            : 'bg-muted/50 hover:bg-muted'
+                        }`}
                       >
+                        <RadioGroupItem 
+                          value={intervention.id} 
+                          id={`intervention-${intervention.id}`} 
+                          className="mr-3"
+                        />
                         <div className="mr-3">
                           {getInterventionIcon(intervention.type)}
                         </div>
@@ -103,9 +125,12 @@ const InterventionSuggestion: React.FC = () => {
                           <h5 className="font-medium">{intervention.title}</h5>
                           <p className="text-xs text-muted-foreground">{intervention.duration} min</p>
                         </div>
+                        {selectedInterventionId === intervention.id && (
+                          <Check className="h-4 w-4 text-flowstate-teal ml-2" />
+                        )}
                       </div>
                     ))}
-                  </div>
+                  </RadioGroup>
                 </div>
               )}
             </CardContent>
