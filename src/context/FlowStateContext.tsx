@@ -22,6 +22,7 @@ interface FlowStateContextType {
   resetAll: () => void;
   getSuggestedInterventions: () => Intervention[];
   completeCurrentTask: () => void;
+  deleteCurrentTask: () => void;
   setCurrentTask: (taskId: string) => void;
   loginUser: (email: string, password: string) => Promise<void>;
   registerUser: (email: string, password: string, name: string) => Promise<void>;
@@ -41,6 +42,7 @@ type FlowStateAction =
   | { type: 'END_SESSION'; payload: Session['feedback'] }
   | { type: 'SET_USER_STATE'; payload: UserState }
   | { type: 'COMPLETE_CURRENT_TASK' }
+  | { type: 'DELETE_CURRENT_TASK' }
   | { type: 'SET_CURRENT_TASK'; payload: string }
   | { type: 'SET_USER'; payload: User | null }
   | { type: 'RESET_ALL' };
@@ -179,6 +181,17 @@ const flowStateReducer = (state: FlowStateState, action: FlowStateAction): FlowS
         currentTask: tasksAfterCompletion.length > 0 ? tasksAfterCompletion[0] : null,
       };
 
+    case 'DELETE_CURRENT_TASK':
+      if (!state.currentTask) return state;
+      
+      const tasksAfterDeletion = state.tasks.filter(task => task.id !== state.currentTask?.id);
+      
+      return {
+        ...state,
+        tasks: tasksAfterDeletion,
+        currentTask: tasksAfterDeletion.length > 0 ? tasksAfterDeletion[0] : null,
+      };
+
     case 'SET_CURRENT_TASK':
       const taskToSet = state.tasks.find(task => task.id === action.payload);
       if (!taskToSet) return state;
@@ -206,7 +219,6 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [state, dispatch] = useReducer(flowStateReducer, initialState);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Check for existing user session on mount
   useEffect(() => {
     const checkAuth = async () => {
       setIsLoading(true);
@@ -245,6 +257,11 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const completeCurrentTask = () => {
     dispatch({ type: 'COMPLETE_CURRENT_TASK' });
     toast.success("Task marked as completed");
+  };
+
+  const deleteCurrentTask = () => {
+    dispatch({ type: 'DELETE_CURRENT_TASK' });
+    toast.success("Task deleted successfully");
   };
 
   const setCurrentTask = (taskId: string) => {
@@ -344,6 +361,7 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         endSession,
         setUserState,
         completeCurrentTask,
+        deleteCurrentTask,
         resetAll,
         getSuggestedInterventions,
         setCurrentTask,

@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { Brain, Play, History, PlusCircle, Edit, Timer, Lightbulb, ClipboardCheck, LogOut, AlertTriangle, Star, CircleDot, ListChecks, Calendar } from 'lucide-react';
+import { Brain, Play, History, PlusCircle, Edit, Timer, Lightbulb, ClipboardCheck, LogOut, AlertTriangle, Star, CircleDot, ListChecks, Calendar, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { format, isToday } from 'date-fns';
 
@@ -16,7 +16,8 @@ const Dashboard: React.FC = () => {
     currentTask, 
     activeSession, 
     completedTasks, 
-    completeCurrentTask, 
+    completeCurrentTask,
+    deleteCurrentTask,
     tasks,
     getTodaysTasks,
     logoutUser 
@@ -52,6 +53,10 @@ const Dashboard: React.FC = () => {
 
   const handleCompleteTask = () => {
     completeCurrentTask();
+  };
+
+  const handleDeleteTask = () => {
+    deleteCurrentTask();
   };
 
   const getPriorityIcon = (priority: string) => {
@@ -134,6 +139,15 @@ const Dashboard: React.FC = () => {
                     <Button
                       variant="ghost"
                       size="sm"
+                      className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-50"
+                      onClick={handleDeleteTask}
+                      title="Delete task"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       className="h-8 w-8 p-0 text-flowstate-teal"
                       onClick={handleCompleteTask}
                       title="Mark as completed"
@@ -204,13 +218,21 @@ const Dashboard: React.FC = () => {
           </CardContent>
           
           {currentTask && (
-            <CardFooter>
+            <CardFooter className="flex flex-col gap-2">
               <Button
                 onClick={startNewSession}
                 className="w-full bg-flowstate-teal hover:bg-flowstate-teal/90 text-white"
               >
                 <Play className="mr-2 h-4 w-4" />
                 Start Focus Session
+              </Button>
+              <Button
+                onClick={editCurrentTask}
+                variant="ghost"
+                className="w-full text-flowstate-purple border border-flowstate-purple/50 hover:bg-flowstate-purple/10"
+              >
+                <Edit className="mr-2 h-4 w-4" />
+                Edit Task
               </Button>
             </CardFooter>
           )}
