@@ -9,6 +9,18 @@ export interface UserState {
   blockingThoughts?: string;
 }
 
+export interface User {
+  id: string;
+  email: string;
+  name?: string;
+  createdAt: Date;
+  lastLoginAt: Date;
+  streak: {
+    count: number;
+    lastActiveDate: Date;
+  };
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -17,6 +29,7 @@ export interface Task {
   dueDate?: Date;
   createdAt: Date;
   sessions: Session[];
+  completed: boolean;
 }
 
 export interface Session {

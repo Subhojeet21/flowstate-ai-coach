@@ -5,11 +5,33 @@ import { useFlowState } from '@/context/FlowStateContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Brain, Play, LineChart, History, PlusCircle, Edit, Timer, Lightbulb, ClipboardCheck } from 'lucide-react';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Brain, Play, History, PlusCircle, Edit, Timer, Lightbulb, ClipboardCheck, LogOut, AlertTriangle, Star, CircleDot, ListChecks, Calendar } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { format, isToday } from 'date-fns';
 
 const Dashboard: React.FC = () => {
-  const { currentTask, activeSession, completedTasks, completeCurrentTask } = useFlowState();
+  const { 
+    currentUser, 
+    currentTask, 
+    activeSession, 
+    completedTasks, 
+    completeCurrentTask, 
+    tasks,
+    getTodaysTasks,
+    logoutUser 
+  } = useFlowState();
   const navigate = useNavigate();
+  
+  // If no user is logged in, redirect to login
+  React.useEffect(() => {
+    if (!currentUser) {
+      navigate('/login');
+    }
+  }, [currentUser, navigate]);
+  
+  // Get today's tasks and sort by priority
+  const todaysTasks = getTodaysTasks();
   
   const totalSessions = currentTask?.sessions.length || 0;
   const totalMinutes = currentTask?.sessions.reduce((acc, session) => acc + (session.duration || 0), 0) || 0;
@@ -30,17 +52,65 @@ const Dashboard: React.FC = () => {
     navigate('/task-history');
   };
 
+  const viewAllTasks = () => {
+    navigate('/tasks');
+  };
+
   const handleCompleteTask = () => {
     completeCurrentTask();
   };
 
+  const getPriorityIcon = (priority: string) => {
+    switch (priority) {
+      case 'high':
+        return <AlertTriangle className="h-4 w-4 text-red-500" />;
+      case 'medium':
+        return <Star className="h-4 w-4 text-amber-500" />;
+      case 'low':
+        return <CircleDot className="h-4 w-4 text-green-500" />;
+      default:
+        return null;
+    }
+  };
+
+  if (!currentUser) return null;
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4">
       <div className="w-full max-w-md">
-        <div className="flex justify-center mb-6">
-          <div className="relative flex items-center justify-center w-24 h-24 mb-2">
-            <Brain className="w-16 h-16 text-flowstate-purple animate-pulse-light" />
+        <div className="flex justify-between items-center mb-6">
+          <div className="relative flex items-center justify-center w-16 h-16">
+            <Brain className="w-12 h-12 text-flowstate-purple animate-pulse-light" />
             <div className="absolute inset-0 bg-flowstate-purple/10 rounded-full animate-pulse-light" />
+          </div>
+          
+          <div className="flex flex-col items-end">
+            <div className="flex items-center space-x-2 mb-1">
+              <span className="text-sm font-medium">{currentUser.email}</span>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <LogOut className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-48">
+                  <div className="flex flex-col space-y-2">
+                    <p className="text-sm">Log out?</p>
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      onClick={logoutUser}
+                    >
+                      Log Out
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="flex items-center bg-flowstate-teal/10 px-3 py-1 rounded-full text-flowstate-teal">
+              <Calendar className="mr-2 h-4 w-4" />
+              <span className="text-sm font-medium">{currentUser.streak.count} Day Streak</span>
+            </div>
           </div>
         </div>
         
@@ -77,9 +147,23 @@ const Dashboard: React.FC = () => {
                 </div>
                 
                 <div className="bg-flowstate-blue/10 p-3 rounded-md">
-                  <h4 className="font-medium">{currentTask.title}</h4>
+                  <div className="flex justify-between mb-1">
+                    <h4 className="font-medium">{currentTask.title}</h4>
+                    <Badge className="flex items-center gap-1 text-xs">
+                      {getPriorityIcon(currentTask.priority)}
+                      {currentTask.priority.charAt(0).toUpperCase() + currentTask.priority.slice(1)}
+                    </Badge>
+                  </div>
                   {currentTask.description && (
                     <p className="text-sm text-muted-foreground mt-1">{currentTask.description}</p>
+                  )}
+                  {currentTask.dueDate && (
+                    <div className="flex items-center text-xs mt-2 text-flowstate-blue">
+                      <Calendar className="mr-1 h-3 w-3" />
+                      {isToday(new Date(currentTask.dueDate)) 
+                        ? 'Due Today' 
+                        : `Due ${format(new Date(currentTask.dueDate), 'PP')}`}
+                    </div>
                   )}
                 </div>
                 
@@ -135,7 +219,67 @@ const Dashboard: React.FC = () => {
           )}
         </Card>
         
+        {/* Today's Tasks Section */}
+        <Card className="w-full bg-white shadow-md mb-4">
+          <CardHeader className="pb-2">
+            <div className="flex justify-between items-center">
+              <CardTitle className="text-lg font-bold text-flowstate-purple">Today's Tasks</CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={viewAllTasks}
+                className="text-flowstate-purple hover:text-flowstate-purple/90"
+              >
+                View All
+              </Button>
+            </div>
+          </CardHeader>
+          
+          <CardContent className="space-y-3">
+            {todaysTasks.length > 0 ? (
+              todaysTasks.map((task) => (
+                <div 
+                  key={task.id}
+                  className={`p-3 border rounded-md cursor-pointer hover:bg-muted/20 transition-colors ${
+                    currentTask?.id === task.id ? 'border-flowstate-purple bg-flowstate-purple/5' : 'border-gray-200'
+                  }`}
+                  onClick={() => navigate('/tasks')}
+                >
+                  <div className="flex justify-between mb-1">
+                    <h4 className="font-medium text-sm">{task.title}</h4>
+                    <div className="flex items-center text-xs">
+                      {getPriorityIcon(task.priority)}
+                    </div>
+                  </div>
+                  {task.dueDate && isToday(new Date(task.dueDate)) && (
+                    <div className="flex items-center text-xs mt-1 text-red-500">
+                      <Calendar className="mr-1 h-3 w-3" />
+                      Due Today
+                    </div>
+                  )}
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-4 bg-muted/20 rounded-md">
+                <p className="text-sm text-muted-foreground">No tasks due today</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        
         <div className="flex flex-col space-y-2">
+          <Button
+            variant="outline"
+            className="w-full border-flowstate-purple text-flowstate-purple hover:bg-flowstate-purple/10"
+            onClick={viewAllTasks}
+          >
+            <ListChecks className="mr-2 h-4 w-4" />
+            All Tasks
+            <span className="ml-1.5 bg-flowstate-purple/20 text-flowstate-purple text-xs rounded-full px-2 py-0.5">
+              {tasks.length}
+            </span>
+          </Button>
+          
           {currentTask && totalSessions > 0 && (
             <Button
               variant="outline"

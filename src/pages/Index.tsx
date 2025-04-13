@@ -10,6 +10,8 @@ import WorkSession from "@/components/WorkSession";
 import PostSessionReview from "@/components/PostSessionReview";
 import SessionHistory from "@/components/SessionHistory";
 import TaskHistory from "@/components/TaskHistory";
+import TaskList from "@/components/TaskList";
+import Login from "@/components/Login";
 import { Toaster } from "@/components/ui/toaster";
 
 const Index: React.FC = () => {
@@ -17,6 +19,7 @@ const Index: React.FC = () => {
     <FlowStateProvider>
       <Routes>
         <Route path="/" element={<Dashboard />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/task-setup" element={<TaskSetup />} />
         <Route path="/check-in" element={<CheckIn />} />
         <Route path="/intervention" element={<InterventionSuggestion />} />
@@ -24,6 +27,7 @@ const Index: React.FC = () => {
         <Route path="/review" element={<PostSessionReview />} />
         <Route path="/history" element={<SessionHistory />} />
         <Route path="/task-history" element={<TaskHistory />} />
+        <Route path="/tasks" element={<TaskList />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <Toaster />

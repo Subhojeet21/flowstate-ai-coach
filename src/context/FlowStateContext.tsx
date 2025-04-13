@@ -1,8 +1,12 @@
+
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
-import { Task, Session, UserState, Intervention, PriorityLevel } from '@/types';
+import { Task, Session, UserState, Intervention, PriorityLevel, User } from '@/types';
 import { interventions } from '@/data/interventions';
+import { toast } from "sonner";
 
 interface FlowStateContextType {
+  currentUser: User | null;
+  tasks: Task[];
   currentTask: Task | null;
   completedTasks: Task[];
   activeSession: Session | null;
@@ -16,11 +20,27 @@ interface FlowStateContextType {
   resetAll: () => void;
   getSuggestedInterventions: () => Intervention[];
   completeCurrentTask: () => void;
+  setCurrentTask: (taskId: string) => void;
+  loginUser: (email: string, password: string) => void;
+  logoutUser: () => void;
+  getTodaysTasks: () => Task[];
 }
 
 const defaultUserState: UserState = {
   energy: 'medium',
   emotion: 'neutral',
+};
+
+const mockUser: User = {
+  id: '1',
+  email: 'user@example.com',
+  name: 'Demo User',
+  createdAt: new Date(),
+  lastLoginAt: new Date(),
+  streak: {
+    count: 7,
+    lastActiveDate: new Date(),
+  }
 };
 
 type FlowStateAction =
@@ -29,9 +49,14 @@ type FlowStateAction =
   | { type: 'END_SESSION'; payload: Session['feedback'] }
   | { type: 'SET_USER_STATE'; payload: UserState }
   | { type: 'COMPLETE_CURRENT_TASK' }
+  | { type: 'SET_CURRENT_TASK'; payload: string }
+  | { type: 'LOGIN_USER'; payload: { email: string; password: string } }
+  | { type: 'LOGOUT_USER' }
   | { type: 'RESET_ALL' };
 
 interface FlowStateState {
+  currentUser: User | null;
+  tasks: Task[];
   currentTask: Task | null;
   completedTasks: Task[];
   sessions: Session[];
@@ -41,6 +66,8 @@ interface FlowStateState {
 }
 
 const initialState: FlowStateState = {
+  currentUser: null,
+  tasks: [],
   currentTask: null,
   completedTasks: [],
   sessions: [],
@@ -62,10 +89,13 @@ const flowStateReducer = (state: FlowStateState, action: FlowStateAction): FlowS
         dueDate: action.payload.dueDate,
         createdAt: new Date(),
         sessions: [],
+        completed: false,
       };
+      
       return {
         ...state,
-        currentTask: newTask,
+        tasks: [...state.tasks, newTask],
+        currentTask: state.currentTask || newTask,
       };
 
     case 'START_SESSION':
@@ -86,7 +116,7 @@ const flowStateReducer = (state: FlowStateState, action: FlowStateAction): FlowS
       };
 
     case 'END_SESSION':
-      if (!state.activeSession) return state;
+      if (!state.activeSession || !state.currentTask) return state;
       
       const endedSession: Session = {
         ...state.activeSession,
@@ -99,15 +129,46 @@ const flowStateReducer = (state: FlowStateState, action: FlowStateAction): FlowS
       };
       
       const updatedSessions = [...state.sessions, endedSession];
-      const updatedTask = state.currentTask 
+      
+      // Update the current task with the new session
+      const updatedTasks = state.tasks.map(task => 
+        task.id === state.currentTask?.id 
+          ? { ...task, sessions: [...task.sessions, endedSession] } 
+          : task
+      );
+      
+      const updatedCurrentTask = state.currentTask 
         ? { ...state.currentTask, sessions: [...state.currentTask.sessions, endedSession] }
         : null;
+
+      // Update streak
+      let updatedUser = state.currentUser;
+      if (updatedUser) {
+        const today = new Date().toDateString();
+        const lastActiveDate = new Date(updatedUser.streak.lastActiveDate).toDateString();
+        
+        if (today !== lastActiveDate) {
+          const yesterday = new Date();
+          yesterday.setDate(yesterday.getDate() - 1);
+          const isConsecutiveDay = lastActiveDate === yesterday.toDateString();
+          
+          updatedUser = {
+            ...updatedUser,
+            streak: {
+              count: isConsecutiveDay ? updatedUser.streak.count + 1 : 1,
+              lastActiveDate: new Date(),
+            }
+          };
+        }
+      }
 
       return {
         ...state,
         sessions: updatedSessions,
-        currentTask: updatedTask,
+        tasks: updatedTasks,
+        currentTask: updatedCurrentTask,
         activeSession: null,
+        currentUser: updatedUser,
       };
 
     case 'SET_USER_STATE':
@@ -119,10 +180,37 @@ const flowStateReducer = (state: FlowStateState, action: FlowStateAction): FlowS
     case 'COMPLETE_CURRENT_TASK':
       if (!state.currentTask) return state;
       
+      const completedTask = { ...state.currentTask, completed: true };
+      const tasksAfterCompletion = state.tasks.filter(task => task.id !== state.currentTask?.id);
+      
       return {
         ...state,
-        completedTasks: [...state.completedTasks, state.currentTask],
-        currentTask: null,
+        tasks: tasksAfterCompletion,
+        completedTasks: [...state.completedTasks, completedTask],
+        currentTask: tasksAfterCompletion.length > 0 ? tasksAfterCompletion[0] : null,
+      };
+
+    case 'SET_CURRENT_TASK':
+      const taskToSet = state.tasks.find(task => task.id === action.payload);
+      if (!taskToSet) return state;
+      
+      return {
+        ...state,
+        currentTask: taskToSet,
+      };
+
+    case 'LOGIN_USER':
+      // In a real app, this would authenticate against a backend
+      // For now, we'll use a mock user
+      return {
+        ...state,
+        currentUser: mockUser,
+      };
+
+    case 'LOGOUT_USER':
+      return {
+        ...state,
+        currentUser: null,
       };
 
     case 'RESET_ALL':
@@ -138,6 +226,7 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const createTask = (title: string, description?: string, priority: PriorityLevel = 'medium', dueDate?: Date) => {
     dispatch({ type: 'CREATE_TASK', payload: { title, description, priority, dueDate } });
+    toast.success("Task created successfully");
   };
 
   const startSession = (userState: UserState) => {
@@ -154,6 +243,21 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
 
   const completeCurrentTask = () => {
     dispatch({ type: 'COMPLETE_CURRENT_TASK' });
+    toast.success("Task marked as completed");
+  };
+
+  const setCurrentTask = (taskId: string) => {
+    dispatch({ type: 'SET_CURRENT_TASK', payload: taskId });
+  };
+
+  const loginUser = (email: string, password: string) => {
+    dispatch({ type: 'LOGIN_USER', payload: { email, password } });
+    toast.success("Logged in successfully");
+  };
+
+  const logoutUser = () => {
+    dispatch({ type: 'LOGOUT_USER' });
+    toast.success("Logged out successfully");
   };
 
   const resetAll = () => {
@@ -171,9 +275,33 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     });
   };
 
+  const getTodaysTasks = (): Task[] => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return state.tasks
+      .filter(task => {
+        // If due date is today or before today and not completed
+        if (task.dueDate) {
+          const dueDate = new Date(task.dueDate);
+          dueDate.setHours(0, 0, 0, 0);
+          return dueDate <= today && !task.completed;
+        }
+        // Include tasks with no due date
+        return !task.completed;
+      })
+      .sort((a, b) => {
+        // Sort by priority: high -> medium -> low
+        const priorityOrder = { high: 0, medium: 1, low: 2 };
+        return priorityOrder[a.priority] - priorityOrder[b.priority];
+      });
+  };
+
   return (
     <FlowStateContext.Provider
       value={{
+        currentUser: state.currentUser,
+        tasks: state.tasks,
         currentTask: state.currentTask,
         completedTasks: state.completedTasks,
         activeSession: state.activeSession,
@@ -187,6 +315,10 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         completeCurrentTask,
         resetAll,
         getSuggestedInterventions,
+        setCurrentTask,
+        loginUser,
+        logoutUser,
+        getTodaysTasks,
       }}
     >
       {children}

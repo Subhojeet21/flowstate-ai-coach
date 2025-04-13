@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { formatDistanceToNow, format } from 'date-fns';
-import { ArrowLeft, Calendar, Clock, CheckCircle, Flag } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, CheckCircle, AlertTriangle, Star, CircleDot } from 'lucide-react';
 
 const TaskHistory: React.FC = () => {
   const { completedTasks } = useFlowState();
@@ -33,12 +33,16 @@ const TaskHistory: React.FC = () => {
     return task.sessions.length;
   };
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityIcon = (priority: string) => {
     switch (priority) {
-      case 'high': return 'text-red-500';
-      case 'medium': return 'text-amber-500';
-      case 'low': return 'text-green-500';
-      default: return 'text-gray-500';
+      case 'high':
+        return <AlertTriangle className="h-4 w-4 text-red-500" />;
+      case 'medium':
+        return <Star className="h-4 w-4 text-amber-500" />;
+      case 'low':
+        return <CircleDot className="h-4 w-4 text-green-500" />;
+      default:
+        return null;
     }
   };
 
@@ -82,9 +86,11 @@ const TaskHistory: React.FC = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className={`flex items-center ${getPriorityColor(task.priority)}`}>
-                            <Flag className="mr-2 h-4 w-4" />
-                            {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                          <div className="flex items-center">
+                            {getPriorityIcon(task.priority)}
+                            <span className="ml-2">
+                              {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                            </span>
                           </div>
                         </TableCell>
                         <TableCell>
