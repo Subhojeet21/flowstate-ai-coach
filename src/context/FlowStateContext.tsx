@@ -1,9 +1,12 @@
+
 import React, { createContext, useContext, useReducer, useEffect, useState } from 'react';
 
 import { Task, Session, UserState, Intervention, PriorityLevel, User } from '@/types';
 import { interventions } from '@/data/interventions';
 import { toast } from "sonner";
 import * as api from '@/services/api';
+import { tasksService, sessionsService } from '@/services/supabaseService';
+import { supabase } from "@/integrations/supabase/client";
 
 interface FlowStateContextType {
   currentUser: User | null;
@@ -15,18 +18,18 @@ interface FlowStateContextType {
   userState: UserState | null;
   isInSession: boolean;
   isLoading: boolean;
-  createTask: (title: string, description?: string, priority?: PriorityLevel, dueDate?: Date) => void;
-  startSession: (state: UserState, selectedIntervention?: Intervention) => void;
-  endSession: (feedback: Session['feedback']) => void;
+  createTask: (title: string, description?: string, priority?: PriorityLevel, dueDate?: Date) => Promise<void>;
+  startSession: (state: UserState, selectedIntervention?: Intervention) => Promise<void>;
+  endSession: (feedback: Session['feedback']) => Promise<void>;
   setUserState: (state: UserState) => void;
   resetAll: () => void;
   getSuggestedInterventions: () => Intervention[];
-  completeCurrentTask: () => void;
-  deleteCurrentTask: () => void;
+  completeCurrentTask: () => Promise<void>;
+  deleteCurrentTask: () => Promise<void>;
   setCurrentTask: (taskId: string) => void;
   loginUser: (email: string, password: string) => Promise<void>;
   registerUser: (email: string, password: string, name: string) => Promise<void>;
-  logoutUser: () => void;
+  logoutUser: () => Promise<void>;
   getTodaysTasks: () => Task[];
 }
 
@@ -36,11 +39,13 @@ const defaultUserState: UserState = {
 };
 
 type FlowStateAction =
-  | { type: 'CREATE_TASK'; payload: { title: string; description?: string; priority: PriorityLevel; dueDate?: Date } }
-  | { type: 'START_SESSION'; payload: { state: UserState; selectedIntervention?: Intervention } }
-  | { type: 'END_SESSION'; payload: Session['feedback'] }
+  | { type: 'CREATE_TASK'; payload: Task }
+  | { type: 'SET_TASKS'; payload: Task[] }
+  | { type: 'SET_COMPLETED_TASKS'; payload: Task[] }
+  | { type: 'START_SESSION'; payload: Session }
+  | { type: 'END_SESSION'; payload: Session }
   | { type: 'SET_USER_STATE'; payload: UserState }
-  | { type: 'COMPLETE_CURRENT_TASK' }
+  | { type: 'COMPLETE_CURRENT_TASK'; payload: Task }
   | { type: 'DELETE_CURRENT_TASK' }
   | { type: 'SET_CURRENT_TASK'; payload: string }
   | { type: 'SET_USER'; payload: User | null }
@@ -72,94 +77,53 @@ const FlowStateContext = createContext<FlowStateContextType | undefined>(undefin
 
 const flowStateReducer = (state: FlowStateState, action: FlowStateAction): FlowStateState => {
   switch (action.type) {
-    case 'CREATE_TASK':
-      const newTask: Task = {
-        id: Date.now().toString(),
-        title: action.payload.title,
-        description: action.payload.description,
-        priority: action.payload.priority,
-        dueDate: action.payload.dueDate,
-        createdAt: new Date(),
-        sessions: [],
-        completed: false,
-      };
-      
+    case 'SET_TASKS':
       return {
         ...state,
-        tasks: [...state.tasks, newTask],
-        currentTask: state.currentTask === null ? newTask : state.currentTask,
+        tasks: action.payload,
+        currentTask: state.currentTask || (action.payload.length > 0 ? action.payload[0] : null),
+      };
+      
+    case 'SET_COMPLETED_TASKS':
+      return {
+        ...state,
+        completedTasks: action.payload,
+      };
+    
+    case 'CREATE_TASK':
+      return {
+        ...state,
+        tasks: [...state.tasks, action.payload],
+        currentTask: state.currentTask === null ? action.payload : state.currentTask,
       };
 
     case 'START_SESSION':
-      if (!state.currentTask) return state;
-      
-      const newSession: Session = {
-        id: Date.now().toString(),
-        taskId: state.currentTask.id,
-        startTime: new Date(),
-        state: action.payload.state,
-        completed: false,
-        selectedIntervention: action.payload.selectedIntervention,
-      };
-      
       return {
         ...state,
-        activeSession: newSession,
+        activeSession: action.payload,
         userState: action.payload.state,
       };
 
     case 'END_SESSION':
-      if (!state.activeSession || !state.currentTask) return state;
+      const endedSession = action.payload;
       
-      const endedSession: Session = {
-        ...state.activeSession,
-        endTime: new Date(),
-        duration: Math.floor(
-          (new Date().getTime() - state.activeSession.startTime.getTime()) / 60000
-        ),
-        completed: true,
-        feedback: action.payload,
-      };
-      
-      const updatedSessions = [...state.sessions, endedSession];
-      
+      // Update the task with the new session
       const updatedTasks = state.tasks.map(task => 
-        task.id === state.currentTask?.id 
+        task.id === endedSession.taskId 
           ? { ...task, sessions: [...task.sessions, endedSession] } 
           : task
       );
       
-      const updatedCurrentTask = state.currentTask 
+      const updatedCurrentTask = state.currentTask && state.currentTask.id === endedSession.taskId
         ? { ...state.currentTask, sessions: [...state.currentTask.sessions, endedSession] }
-        : null;
-
-      let updatedUser = state.currentUser;
-      if (updatedUser) {
-        const today = new Date().toDateString();
-        const lastActiveDate = new Date(updatedUser.streak.lastActiveDate).toDateString();
-        
-        if (today !== lastActiveDate) {
-          const yesterday = new Date();
-          yesterday.setDate(yesterday.getDate() - 1);
-          const isConsecutiveDay = lastActiveDate === yesterday.toDateString();
-          
-          updatedUser = {
-            ...updatedUser,
-            streak: {
-              count: isConsecutiveDay ? updatedUser.streak.count + 1 : 1,
-              lastActiveDate: new Date(),
-            }
-          };
-        }
-      }
+        : state.currentTask;
 
       return {
         ...state,
-        sessions: updatedSessions,
+        sessions: [...state.sessions, endedSession],
         tasks: updatedTasks,
         currentTask: updatedCurrentTask,
         activeSession: null,
-        currentUser: updatedUser,
       };
 
     case 'SET_USER_STATE':
@@ -171,8 +135,8 @@ const flowStateReducer = (state: FlowStateState, action: FlowStateAction): FlowS
     case 'COMPLETE_CURRENT_TASK':
       if (!state.currentTask) return state;
       
-      const completedTask = { ...state.currentTask, completed: true };
-      const tasksAfterCompletion = state.tasks.filter(task => task.id !== state.currentTask?.id);
+      const completedTask = action.payload;
+      const tasksAfterCompletion = state.tasks.filter(task => task.id !== completedTask.id);
       
       return {
         ...state,
@@ -208,7 +172,10 @@ const flowStateReducer = (state: FlowStateState, action: FlowStateAction): FlowS
       };
 
     case 'RESET_ALL':
-      return initialState;
+      return {
+        ...initialState,
+        currentUser: state.currentUser,
+      };
 
     default:
       return state;
@@ -219,13 +186,28 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [state, dispatch] = useReducer(flowStateReducer, initialState);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Load user data on auth state change
   useEffect(() => {
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          await loadUserData();
+        } else if (event === 'SIGNED_OUT') {
+          dispatch({ type: 'SET_USER', payload: null });
+          dispatch({ type: 'RESET_ALL' });
+        }
+      }
+    );
+
+    // Initial session check
     const checkAuth = async () => {
       setIsLoading(true);
       try {
         const user = await api.getCurrentUser();
         if (user) {
           dispatch({ type: 'SET_USER', payload: user });
+          await loadUserTasks(user.id);
         }
       } catch (error) {
         console.error('Auth check failed:', error);
@@ -235,39 +217,161 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     };
 
     checkAuth();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const createTask = (title: string, description?: string, priority: PriorityLevel = 'medium', dueDate?: Date) => {
-    dispatch({ type: 'CREATE_TASK', payload: { title, description, priority, dueDate } });
-    toast.success("Task created successfully");
+  // Load user data after authentication
+  const loadUserData = async () => {
+    setIsLoading(true);
+    try {
+      const user = await api.getCurrentUser();
+      if (user) {
+        dispatch({ type: 'SET_USER', payload: user });
+        await loadUserTasks(user.id);
+      }
+    } catch (error) {
+      console.error('Failed to load user data:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const startSession = (userState: UserState, selectedIntervention?: Intervention) => {
-    dispatch({ 
-      type: 'START_SESSION', 
-      payload: { 
-        state: userState,
-        selectedIntervention 
-      } 
-    });
+  // Load user tasks
+  const loadUserTasks = async (userId: string) => {
+    try {
+      // Load active tasks
+      const tasks = await tasksService.getAll(userId);
+      dispatch({ type: 'SET_TASKS', payload: tasks });
+      
+      // Load completed tasks
+      const completedTasks = await tasksService.getCompleted(userId);
+      dispatch({ type: 'SET_COMPLETED_TASKS', payload: completedTasks });
+    } catch (error) {
+      console.error('Failed to load tasks:', error);
+      toast.error("Failed to load tasks");
+    }
   };
 
-  const endSession = (feedback: Session['feedback']) => {
-    dispatch({ type: 'END_SESSION', payload: feedback });
+  const createTask = async (title: string, description?: string, priority: PriorityLevel = 'medium', dueDate?: Date) => {
+    if (!state.currentUser) {
+      toast.error("You must be logged in to create tasks");
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      const newTask = await tasksService.create(
+        { title, description, priority, dueDate, createdAt: new Date(), completed: false }, 
+        state.currentUser.id
+      );
+      
+      dispatch({ type: 'CREATE_TASK', payload: newTask });
+      toast.success("Task created successfully");
+    } catch (error) {
+      console.error('Failed to create task:', error);
+      toast.error("Failed to create task");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const startSession = async (userState: UserState, selectedIntervention?: Intervention) => {
+    if (!state.currentUser || !state.currentTask) {
+      toast.error("You must be logged in and have a task selected");
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      const newSession = await sessionsService.startSession(
+        state.currentTask.id,
+        state.currentUser.id,
+        userState,
+        selectedIntervention
+      );
+      
+      dispatch({ 
+        type: 'START_SESSION', 
+        payload: newSession
+      });
+    } catch (error) {
+      console.error('Failed to start session:', error);
+      toast.error("Failed to start session");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const endSession = async (feedback: Session['feedback']) => {
+    if (!state.activeSession) {
+      toast.error("No active session to end");
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      const endedSession = await sessionsService.endSession(
+        state.activeSession.id,
+        feedback
+      );
+      
+      dispatch({ type: 'END_SESSION', payload: endedSession });
+    } catch (error) {
+      console.error('Failed to end session:', error);
+      toast.error("Failed to end session");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const setUserState = (userState: UserState) => {
     dispatch({ type: 'SET_USER_STATE', payload: userState });
   };
 
-  const completeCurrentTask = () => {
-    dispatch({ type: 'COMPLETE_CURRENT_TASK' });
-    toast.success("Task marked as completed");
+  const completeCurrentTask = async () => {
+    if (!state.currentTask) {
+      toast.error("No task selected");
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      const completedTask = await tasksService.update({
+        ...state.currentTask,
+        completed: true
+      });
+      
+      dispatch({ type: 'COMPLETE_CURRENT_TASK', payload: completedTask });
+      toast.success("Task marked as completed");
+    } catch (error) {
+      console.error('Failed to complete task:', error);
+      toast.error("Failed to complete task");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const deleteCurrentTask = () => {
-    dispatch({ type: 'DELETE_CURRENT_TASK' });
-    toast.success("Task deleted successfully");
+  const deleteCurrentTask = async () => {
+    if (!state.currentTask) {
+      toast.error("No task selected");
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      await tasksService.delete(state.currentTask.id);
+      
+      dispatch({ type: 'DELETE_CURRENT_TASK' });
+      toast.success("Task deleted successfully");
+    } catch (error) {
+      console.error('Failed to delete task:', error);
+      toast.error("Failed to delete task");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const setCurrentTask = (taskId: string) => {
@@ -310,10 +414,19 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
-  const logoutUser = () => {
-    api.logout();
-    dispatch({ type: 'SET_USER', payload: null });
-    toast.success("Logged out successfully");
+  const logoutUser = async () => {
+    setIsLoading(true);
+    try {
+      await api.logout();
+      dispatch({ type: 'SET_USER', payload: null });
+      dispatch({ type: 'RESET_ALL' });
+      toast.success("Logged out successfully");
+    } catch (error) {
+      console.error('Logout failed:', error);
+      toast.error("Logout failed");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const resetAll = () => {

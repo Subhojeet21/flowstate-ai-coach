@@ -9,7 +9,104 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      sessions: {
+        Row: {
+          completed: boolean
+          duration: number | null
+          end_time: string | null
+          feedback: Json | null
+          id: string
+          selected_intervention: Json | null
+          start_time: string
+          state: Json | null
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          duration?: number | null
+          end_time?: string | null
+          feedback?: Json | null
+          id?: string
+          selected_intervention?: Json | null
+          start_time?: string
+          state?: Json | null
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          duration?: number | null
+          end_time?: string | null
+          feedback?: Json | null
+          id?: string
+          selected_intervention?: Json | null
+          start_time?: string
+          state?: Json | null
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sessions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tasks: {
+        Row: {
+          completed: boolean
+          created_at: string
+          description: string | null
+          due_date: string | null
+          id: string
+          priority: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean
+          created_at?: string
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          priority?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_streaks: {
+        Row: {
+          count: number
+          last_active_date: string
+          user_id: string
+        }
+        Insert: {
+          count?: number
+          last_active_date?: string
+          user_id: string
+        }
+        Update: {
+          count?: number
+          last_active_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

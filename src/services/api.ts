@@ -1,5 +1,8 @@
+
 import axios from 'axios';
 import { User } from '@/types';
+import { supabase } from "@/integrations/supabase/client";
+import { userStreakService } from './supabaseService';
 
 // Create an axios instance with a base URL
 // In a real app, this would point to your actual backend
@@ -9,27 +12,6 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
-
-// For demo purposes, we'll simulate API calls with localStorage
-const STORAGE_KEY = 'flowstate_users';
-
-// Helper to initialize localStorage if needed
-const initializeStorage = () => {
-  if (!localStorage.getItem(STORAGE_KEY)) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify([]));
-  }
-};
-
-// Helper to get users from localStorage
-const getUsers = (): User[] => {
-  initializeStorage();
-  return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-};
-
-// Helper to save users to localStorage
-const saveUsers = (users: User[]) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
-};
 
 // Helper to get token from localStorage
 export const getToken = (): string | null => {
@@ -49,22 +31,31 @@ export const removeToken = (): void => {
 // Register a new user
 export const register = async (email: string, password: string, name: string): Promise<User> => {
   try {
-    // In a real app, this would be an API call
-    // For demo, we'll simulate it with localStorage
+    // Register user with Supabase
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          name
+        }
+      }
+    });
     
-    // Check if user already exists
-    const users = getUsers();
-    const existingUser = users.find(user => user.email === email);
+    if (authError) throw authError;
     
-    if (existingUser) {
-      throw new Error('User with this email already exists');
+    if (!authData.user) throw new Error('User registration failed');
+    
+    // Initialize user streak
+    if (authData.user.id) {
+      await userStreakService.initializeStreak(authData.user.id);
     }
     
-    // Create new user
-    const newUser: User = {
-      id: Date.now().toString(),
-      email,
-      name,
+    // Return user data
+    const user: User = {
+      id: authData.user.id,
+      email: authData.user.email || email,
+      name: name,
       createdAt: new Date(),
       lastLoginAt: new Date(),
       streak: {
@@ -73,15 +64,7 @@ export const register = async (email: string, password: string, name: string): P
       },
     };
     
-    // Save user
-    users.push(newUser);
-    saveUsers(users);
-    
-    // Generate a fake token
-    const token = `token_${newUser.id}`;
-    setToken(token);
-    
-    return newUser;
+    return user;
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(error.message);
@@ -93,27 +76,28 @@ export const register = async (email: string, password: string, name: string): P
 // Login a user
 export const login = async (email: string, password: string): Promise<User> => {
   try {
-    // In a real app, this would be an API call
-    // For demo, we'll simulate it with localStorage
+    // Login with Supabase
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
     
-    // Find user
-    const users = getUsers();
-    const user = users.find(user => user.email === email);
+    if (authError) throw authError;
     
-    if (!user) {
-      throw new Error('Invalid email or password');
-    }
+    if (!authData.user) throw new Error('Login failed');
     
-    // In a real app, we would check the password here
-    // For demo, we'll accept any password
+    // Get user streak
+    const streak = await userStreakService.getStreak(authData.user.id);
     
-    // Update last login
-    user.lastLoginAt = new Date();
-    saveUsers(users);
-    
-    // Generate a fake token
-    const token = `token_${user.id}`;
-    setToken(token);
+    // Return user data
+    const user: User = {
+      id: authData.user.id,
+      email: authData.user.email || email,
+      name: authData.user.user_metadata.name,
+      createdAt: new Date(authData.user.created_at || Date.now()),
+      lastLoginAt: new Date(),
+      streak,
+    };
     
     return user;
   } catch (error) {
@@ -127,23 +111,27 @@ export const login = async (email: string, password: string): Promise<User> => {
 // Get current user
 export const getCurrentUser = async (): Promise<User | null> => {
   try {
-    // In a real app, this would be an API call using the token
-    // For demo, we'll simulate it with localStorage
+    // Get current session
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
     
-    const token = getToken();
+    if (sessionError) throw sessionError;
     
-    if (!token) {
-      return null;
-    }
+    if (!sessionData.session?.user) return null;
     
-    // Extract user ID from token
-    const userId = token.split('_')[1];
+    const user = sessionData.session.user;
     
-    // Find user
-    const users = getUsers();
-    const user = users.find(user => user.id === userId);
+    // Get user streak
+    const streak = await userStreakService.getStreak(user.id);
     
-    return user || null;
+    // Return user data
+    return {
+      id: user.id,
+      email: user.email || '',
+      name: user.user_metadata.name,
+      createdAt: new Date(user.created_at || Date.now()),
+      lastLoginAt: new Date(),
+      streak,
+    };
   } catch (error) {
     console.error('Failed to get current user:', error);
     return null;
@@ -151,7 +139,8 @@ export const getCurrentUser = async (): Promise<User | null> => {
 };
 
 // Logout
-export const logout = (): void => {
+export const logout = async (): Promise<void> => {
+  await supabase.auth.signOut();
   removeToken();
 };
 
