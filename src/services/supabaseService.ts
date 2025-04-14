@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Task, Session, User, UserState, Intervention, PriorityLevel } from "@/types";
+import { Json } from "@/integrations/supabase/types";
 
 // Tasks Service
 export const tasksService = {
@@ -99,13 +100,14 @@ export const tasksService = {
 // Sessions Service
 export const sessionsService = {
   async startSession(taskId: string, userId: string, state: UserState, intervention?: Intervention): Promise<Session> {
+    // Convert complex objects to JSON-compatible format
     const sessionToInsert = {
       task_id: taskId,
       user_id: userId,
       start_time: new Date().toISOString(),
-      state: state,
+      state: state as unknown as Json,
       completed: false,
-      selected_intervention: intervention || null
+      selected_intervention: intervention ? intervention as unknown as Json : null
     };
     
     const { data, error } = await supabase
@@ -142,7 +144,7 @@ export const sessionsService = {
       end_time: now.toISOString(),
       duration: durationMinutes,
       completed: true,
-      feedback: feedback
+      feedback: feedback as unknown as Json
     };
     
     const { data, error } = await supabase
@@ -300,9 +302,9 @@ function transformSessionFromDB(dbSession: any): Session {
     startTime: new Date(dbSession.start_time),
     endTime: dbSession.end_time ? new Date(dbSession.end_time) : undefined,
     duration: dbSession.duration || undefined,
-    state: dbSession.state,
+    state: dbSession.state as UserState,
     completed: dbSession.completed,
-    selectedIntervention: dbSession.selected_intervention || undefined,
-    feedback: dbSession.feedback || undefined
+    selectedIntervention: dbSession.selected_intervention as Intervention || undefined,
+    feedback: dbSession.feedback as Session['feedback'] || undefined
   };
 }
