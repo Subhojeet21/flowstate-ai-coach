@@ -1,186 +1,14 @@
 
-import React, { createContext, useContext, useReducer, useEffect, useState } from 'react';
-
-import { Task, Session, UserState, Intervention, PriorityLevel, User } from '@/types';
-import { interventions } from '@/data/interventions';
+import React, { createContext, useReducer, useEffect, useState } from 'react';
 import { toast } from "sonner";
 import * as api from '@/services/api';
 import { tasksService, sessionsService } from '@/services/supabaseService';
 import { supabase } from "@/integrations/supabase/client";
+import { Task, Session, UserState, Intervention, PriorityLevel } from '@/types';
+import { FlowStateContextType, FlowStateState } from './types';
+import { flowStateReducer, initialState } from './flowStateReducer';
 
-interface FlowStateContextType {
-  currentUser: User | null;
-  tasks: Task[];
-  currentTask: Task | null;
-  completedTasks: Task[];
-  activeSession: Session | null;
-  interventions: Intervention[];
-  userState: UserState | null;
-  isInSession: boolean;
-  isLoading: boolean;
-  createTask: (title: string, description?: string, priority?: PriorityLevel, dueDate?: Date) => Promise<void>;
-  startSession: (state: UserState, selectedIntervention?: Intervention) => Promise<void>;
-  endSession: (feedback: Session['feedback']) => Promise<void>;
-  setUserState: (state: UserState) => void;
-  resetAll: () => void;
-  getSuggestedInterventions: () => Intervention[];
-  completeCurrentTask: () => Promise<void>;
-  deleteCurrentTask: () => Promise<void>;
-  setCurrentTask: (taskId: string) => void;
-  loginUser: (email: string, password: string) => Promise<void>;
-  registerUser: (email: string, password: string, name: string) => Promise<void>;
-  logoutUser: () => Promise<void>;
-  getTodaysTasks: () => Task[];
-}
-
-const defaultUserState: UserState = {
-  energy: 'medium',
-  emotion: 'neutral',
-};
-
-type FlowStateAction =
-  | { type: 'CREATE_TASK'; payload: Task }
-  | { type: 'SET_TASKS'; payload: Task[] }
-  | { type: 'SET_COMPLETED_TASKS'; payload: Task[] }
-  | { type: 'START_SESSION'; payload: Session }
-  | { type: 'END_SESSION'; payload: Session }
-  | { type: 'SET_USER_STATE'; payload: UserState }
-  | { type: 'COMPLETE_CURRENT_TASK'; payload: Task }
-  | { type: 'DELETE_CURRENT_TASK' }
-  | { type: 'SET_CURRENT_TASK'; payload: string }
-  | { type: 'SET_USER'; payload: User | null }
-  | { type: 'RESET_ALL' };
-
-interface FlowStateState {
-  currentUser: User | null;
-  tasks: Task[];
-  currentTask: Task | null;
-  completedTasks: Task[];
-  sessions: Session[];
-  activeSession: Session | null;
-  userState: UserState;
-  interventions: Intervention[];
-}
-
-const initialState: FlowStateState = {
-  currentUser: null,
-  tasks: [],
-  currentTask: null,
-  completedTasks: [],
-  sessions: [],
-  activeSession: null,
-  userState: defaultUserState,
-  interventions: interventions,
-};
-
-const FlowStateContext = createContext<FlowStateContextType | undefined>(undefined);
-
-const flowStateReducer = (state: FlowStateState, action: FlowStateAction): FlowStateState => {
-  switch (action.type) {
-    case 'SET_TASKS':
-      return {
-        ...state,
-        tasks: action.payload,
-        currentTask: state.currentTask || (action.payload.length > 0 ? action.payload[0] : null),
-      };
-      
-    case 'SET_COMPLETED_TASKS':
-      return {
-        ...state,
-        completedTasks: action.payload,
-      };
-    
-    case 'CREATE_TASK':
-      return {
-        ...state,
-        tasks: [...state.tasks, action.payload],
-        currentTask: state.currentTask === null ? action.payload : state.currentTask,
-      };
-
-    case 'START_SESSION':
-      return {
-        ...state,
-        activeSession: action.payload,
-        userState: action.payload.state,
-      };
-
-    case 'END_SESSION':
-      const endedSession = action.payload;
-      
-      // Update the task with the new session
-      const updatedTasks = state.tasks.map(task => 
-        task.id === endedSession.taskId 
-          ? { ...task, sessions: [...task.sessions, endedSession] } 
-          : task
-      );
-      
-      const updatedCurrentTask = state.currentTask && state.currentTask.id === endedSession.taskId
-        ? { ...state.currentTask, sessions: [...state.currentTask.sessions, endedSession] }
-        : state.currentTask;
-
-      return {
-        ...state,
-        sessions: [...state.sessions, endedSession],
-        tasks: updatedTasks,
-        currentTask: updatedCurrentTask,
-        activeSession: null,
-      };
-
-    case 'SET_USER_STATE':
-      return {
-        ...state,
-        userState: action.payload,
-      };
-
-    case 'COMPLETE_CURRENT_TASK':
-      if (!state.currentTask) return state;
-      
-      const completedTask = action.payload;
-      const tasksAfterCompletion = state.tasks.filter(task => task.id !== completedTask.id);
-      
-      return {
-        ...state,
-        tasks: tasksAfterCompletion,
-        completedTasks: [...state.completedTasks, completedTask],
-        currentTask: tasksAfterCompletion.length > 0 ? tasksAfterCompletion[0] : null,
-      };
-
-    case 'DELETE_CURRENT_TASK':
-      if (!state.currentTask) return state;
-      
-      const tasksAfterDeletion = state.tasks.filter(task => task.id !== state.currentTask?.id);
-      
-      return {
-        ...state,
-        tasks: tasksAfterDeletion,
-        currentTask: tasksAfterDeletion.length > 0 ? tasksAfterDeletion[0] : null,
-      };
-
-    case 'SET_CURRENT_TASK':
-      const taskToSet = state.tasks.find(task => task.id === action.payload);
-      if (!taskToSet) return state;
-      
-      return {
-        ...state,
-        currentTask: taskToSet,
-      };
-
-    case 'SET_USER':
-      return {
-        ...state,
-        currentUser: action.payload,
-      };
-
-    case 'RESET_ALL':
-      return {
-        ...initialState,
-        currentUser: state.currentUser,
-      };
-
-    default:
-      return state;
-  }
-};
+export const FlowStateContext = createContext<FlowStateContextType | undefined>(undefined);
 
 export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(flowStateReducer, initialState);
@@ -270,6 +98,7 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
+  // Task management functions
   const createTask = async (title: string, description?: string, priority: PriorityLevel = 'medium', dueDate?: Date) => {
     if (!state.currentUser) {
       toast.error("You must be logged in to create tasks");
@@ -293,6 +122,7 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
+  // Session management functions
   const startSession = async (userState: UserState, selectedIntervention?: Intervention) => {
     if (!state.currentUser || !state.currentTask) {
       toast.error("You must be logged in and have a task selected");
@@ -342,6 +172,7 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
+  // User state and task management functions
   const setUserState = (userState: UserState) => {
     dispatch({ type: 'SET_USER_STATE', payload: userState });
   };
@@ -393,6 +224,7 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     dispatch({ type: 'SET_CURRENT_TASK', payload: taskId });
   };
 
+  // Auth functions
   const loginUser = async (email: string, password: string) => {
     setIsLoading(true);
     try {
@@ -452,6 +284,7 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
+  // Utility functions
   const resetAll = () => {
     dispatch({ type: 'RESET_ALL' });
   };
@@ -518,10 +351,4 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   );
 };
 
-export const useFlowState = (): FlowStateContextType => {
-  const context = useContext(FlowStateContext);
-  if (context === undefined) {
-    throw new Error('useFlowState must be used within a FlowStateProvider');
-  }
-  return context;
-};
+export * from './useFlowState';
