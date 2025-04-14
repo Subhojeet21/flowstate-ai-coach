@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useReducer, useEffect, useState } from 'react';
 
 import { Task, Session, UserState, Intervention, PriorityLevel, User } from '@/types';
@@ -183,14 +184,17 @@ const flowStateReducer = (state: FlowStateState, action: FlowStateAction): FlowS
 
 export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(flowStateReducer, initialState);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [authInitialized, setAuthInitialized] = useState(false);
 
   // Load user data on auth state change
   useEffect(() => {
+    console.log('Setting up auth state change listener');
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state change event:', event);
+        
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           await loadUserData();
         } else if (event === 'SIGNED_OUT') {
@@ -204,15 +208,20 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const checkAuth = async () => {
       setIsLoading(true);
       try {
+        console.log('Checking initial auth state');
         const user = await api.getCurrentUser();
         if (user) {
+          console.log('User is authenticated:', user.id);
           dispatch({ type: 'SET_USER', payload: user });
           await loadUserTasks(user.id);
+        } else {
+          console.log('No authenticated user found');
         }
       } catch (error) {
         console.error('Auth check failed:', error);
       } finally {
         setIsLoading(false);
+        setAuthInitialized(true);
       }
     };
 
@@ -227,10 +236,14 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const loadUserData = async () => {
     setIsLoading(true);
     try {
+      console.log('Loading user data');
       const user = await api.getCurrentUser();
       if (user) {
+        console.log('User data loaded:', user.id);
         dispatch({ type: 'SET_USER', payload: user });
         await loadUserTasks(user.id);
+      } else {
+        console.log('No user data found');
       }
     } catch (error) {
       console.error('Failed to load user data:', error);
@@ -242,6 +255,7 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Load user tasks
   const loadUserTasks = async (userId: string) => {
     try {
+      console.log('Loading tasks for user:', userId);
       // Load active tasks
       const tasks = await tasksService.getAll(userId);
       dispatch({ type: 'SET_TASKS', payload: tasks });
@@ -249,6 +263,7 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       // Load completed tasks
       const completedTasks = await tasksService.getCompleted(userId);
       dispatch({ type: 'SET_COMPLETED_TASKS', payload: completedTasks });
+      console.log('Tasks loaded successfully');
     } catch (error) {
       console.error('Failed to load tasks:', error);
       toast.error("Failed to load tasks");
@@ -381,11 +396,14 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const loginUser = async (email: string, password: string) => {
     setIsLoading(true);
     try {
+      console.log('Attempting login for email:', email);
       const user = await api.login(email, password);
+      console.log('Login successful:', user.id);
       dispatch({ type: 'SET_USER', payload: user });
       await loadUserTasks(user.id);
       toast.success("Logged in successfully");
     } catch (error) {
+      console.error('Login failed:', error);
       if (error instanceof Error) {
         toast.error(error.message);
       } else {
@@ -400,10 +418,13 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const registerUser = async (email: string, password: string, name: string) => {
     setIsLoading(true);
     try {
+      console.log('Attempting registration for email:', email);
       const user = await api.register(email, password, name);
+      console.log('Registration successful:', user.id);
       dispatch({ type: 'SET_USER', payload: user });
       toast.success("Account created successfully");
     } catch (error) {
+      console.error('Registration failed:', error);
       if (error instanceof Error) {
         toast.error(error.message);
       } else {
@@ -418,6 +439,7 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const logoutUser = async () => {
     setIsLoading(true);
     try {
+      console.log('Logging out user');
       await api.logout();
       dispatch({ type: 'SET_USER', payload: null });
       dispatch({ type: 'RESET_ALL' });
