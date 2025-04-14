@@ -45,11 +45,9 @@ export const register = async (email: string, password: string, name: string): P
     if (authError) throw authError;
     
     if (!authData.user) throw new Error('User registration failed');
-    
-    // Initialize user streak
-    if (authData.user.id) {
-      await userStreakService.initializeStreak(authData.user.id);
-    }
+
+    // Skip streak initialization for now - we'll handle it on first login
+    // This avoids the RLS policy restriction during signup
     
     // Return user data
     const user: User = {
@@ -86,8 +84,23 @@ export const login = async (email: string, password: string): Promise<User> => {
     
     if (!authData.user) throw new Error('Login failed');
     
-    // Get user streak
-    const streak = await userStreakService.getStreak(authData.user.id);
+    // Get user streak or initialize if it doesn't exist
+    let streak;
+    try {
+      streak = await userStreakService.getStreak(authData.user.id);
+    } catch (error) {
+      // If getting streak fails, initialize it
+      try {
+        streak = await userStreakService.initializeStreak(authData.user.id);
+      } catch (streakError) {
+        console.error('Failed to initialize streak:', streakError);
+        // Provide a default streak to prevent further errors
+        streak = {
+          count: 0,
+          lastActiveDate: new Date()
+        };
+      }
+    }
     
     // Return user data
     const user: User = {
@@ -120,8 +133,23 @@ export const getCurrentUser = async (): Promise<User | null> => {
     
     const user = sessionData.session.user;
     
-    // Get user streak
-    const streak = await userStreakService.getStreak(user.id);
+    // Get user streak or initialize if it doesn't exist
+    let streak;
+    try {
+      streak = await userStreakService.getStreak(user.id);
+    } catch (error) {
+      // If getting streak fails, initialize it
+      try {
+        streak = await userStreakService.initializeStreak(user.id);
+      } catch (streakError) {
+        console.error('Failed to initialize streak:', streakError);
+        // Provide a default streak to prevent further errors
+        streak = {
+          count: 0,
+          lastActiveDate: new Date()
+        };
+      }
+    }
     
     // Return user data
     return {

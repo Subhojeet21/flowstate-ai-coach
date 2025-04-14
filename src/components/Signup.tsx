@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useFlowState } from '@/context/FlowStateContext';
@@ -31,19 +32,36 @@ const Signup: React.FC = () => {
       return;
     }
     
+    if (password.length < 6) {
+      toast.error('Password must be at least 6 characters long');
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
       await registerUser(email, password, name);
-      navigate('/');
+      toast.success('Account created successfully! Redirecting you to the dashboard...');
+      
+      // Short delay to ensure the success message is seen
+      setTimeout(() => {
+        navigate('/');
+      }, 1500);
     } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message);
-      } else {
-        toast.error('Failed to register');
-      }
-    } finally {
       setIsLoading(false);
+      
+      if (error instanceof Error) {
+        // Handle specific error messages
+        if (error.message.includes('User already registered')) {
+          toast.error('An account with this email already exists. Please log in instead.');
+        } else if (error.message.includes('invalid email')) {
+          toast.error('Please enter a valid email address.');
+        } else {
+          toast.error(error.message);
+        }
+      } else {
+        toast.error('Failed to register. Please try again later.');
+      }
     }
   };
 
@@ -92,7 +110,7 @@ const Signup: React.FC = () => {
                 <Input 
                   id="password" 
                   type="password" 
-                  placeholder="Create a password" 
+                  placeholder="Create a password (min. 6 characters)" 
                   value={password} 
                   onChange={(e) => setPassword(e.target.value)}
                   required 
