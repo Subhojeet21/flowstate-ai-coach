@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useReducer, useEffect, useState } from 'react';
 
 import { Task, Session, UserState, Intervention, PriorityLevel, User } from '@/types';
@@ -191,6 +190,7 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state change event:', event);
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           await loadUserData();
         } else if (event === 'SIGNED_OUT') {
@@ -383,6 +383,7 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     try {
       const user = await api.login(email, password);
       dispatch({ type: 'SET_USER', payload: user });
+      await loadUserTasks(user.id);
       toast.success("Logged in successfully");
     } catch (error) {
       if (error instanceof Error) {

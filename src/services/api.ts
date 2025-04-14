@@ -84,6 +84,11 @@ export const login = async (email: string, password: string): Promise<User> => {
     
     if (!authData.user) throw new Error('Login failed');
     
+    // Store session token in localStorage for persistence
+    if (authData.session) {
+      setToken(authData.session.access_token);
+    }
+    
     // Get user streak or initialize if it doesn't exist
     let streak;
     try {

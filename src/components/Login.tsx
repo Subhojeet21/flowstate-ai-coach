@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Brain, LogIn } from 'lucide-react';
+import { toast } from 'sonner';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -17,16 +18,30 @@ const Login: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!email || !password) {
+      toast.error('Please enter your email and password');
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
       await loginUser(email, password);
+      toast.success('Logged in successfully!');
       navigate('/');
     } catch (error) {
-      // Error is already handled in the context
-      console.error('Login failed:', error);
-    } finally {
       setIsLoading(false);
+      if (error instanceof Error) {
+        // Handle specific error messages
+        if (error.message.includes('Invalid login credentials')) {
+          toast.error('Invalid email or password. Please try again.');
+        } else {
+          toast.error(error.message);
+        }
+      } else {
+        toast.error('Login failed. Please try again later.');
+      }
     }
   };
 
@@ -70,12 +85,9 @@ const Login: React.FC = () => {
                   required 
                 />
               </div>
-              <p className="text-xs text-muted-foreground">
-                For demo purposes, you can use any email and password.
-              </p>
             </CardContent>
             
-            <CardFooter>
+            <CardFooter className="flex flex-col space-y-3">
               <Button 
                 type="submit" 
                 className="w-full bg-flowstate-purple hover:bg-flowstate-purple/90 text-white"
@@ -84,7 +96,7 @@ const Login: React.FC = () => {
                 <LogIn className="mr-2 h-4 w-4" />
                 {isLoading ? 'Logging in...' : 'Log In'}
               </Button>
-              <div className="text-sm text-center mt-3">
+              <div className="text-sm text-center">
                 Don't have an account?{' '}
                 <Link to="/signup" className="text-flowstate-purple hover:underline">
                   Sign up
