@@ -50,9 +50,6 @@ export const register = async (email: string, password: string, name: string): P
     if (authData.session) {
       setToken(authData.session.access_token);
     }
-
-    // Skip streak initialization for now - we'll handle it on first login
-    // This avoids the RLS policy restriction during signup
     
     // Return user data
     const user: User = {
@@ -69,6 +66,7 @@ export const register = async (email: string, password: string, name: string): P
     
     return user;
   } catch (error) {
+    console.error('Registration error:', error);
     if (error instanceof Error) {
       throw new Error(error.message);
     }
@@ -79,19 +77,30 @@ export const register = async (email: string, password: string, name: string): P
 // Login a user
 export const login = async (email: string, password: string): Promise<User> => {
   try {
+    console.log('Login attempt for:', email);
+    
     // Login with Supabase
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
       email,
       password
     });
     
-    if (authError) throw authError;
+    if (authError) {
+      console.error('Auth error during login:', authError);
+      throw authError;
+    }
     
-    if (!authData.user) throw new Error('Login failed');
+    if (!authData.user) {
+      console.error('No user returned from sign in');
+      throw new Error('Login failed');
+    }
     
     // Store session token in localStorage for persistence
     if (authData.session) {
+      console.log('Setting token for session');
       setToken(authData.session.access_token);
+    } else {
+      console.error('No session returned from sign in');
     }
     
     // Get user streak or initialize if it doesn't exist
@@ -123,6 +132,7 @@ export const login = async (email: string, password: string): Promise<User> => {
       streak,
     };
     
+    console.log('Login successful, returning user:', user.id);
     return user;
   } catch (error) {
     console.error('Login failed:', error);
@@ -141,7 +151,7 @@ export const getCurrentUser = async (): Promise<User | null> => {
     
     if (sessionError) {
       console.error('Session error:', sessionError);
-      throw sessionError;
+      return null;
     }
     
     if (!sessionData.session?.user) {
@@ -192,9 +202,19 @@ export const getCurrentUser = async (): Promise<User | null> => {
 
 // Logout
 export const logout = async (): Promise<void> => {
-  const { error } = await supabase.auth.signOut();
-  if (error) console.error('Logout error:', error);
-  removeToken();
+  try {
+    console.log('Logging out...');
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('Logout error:', error);
+      throw error;
+    }
+    removeToken();
+    console.log('Logout successful, token removed');
+  } catch (error) {
+    console.error('Logout failed:', error);
+    throw error;
+  }
 };
 
 export default api;

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useFlowState } from '@/context/useFlowState';
 import { Button } from '@/components/ui/button';
@@ -12,8 +13,15 @@ const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { loginUser } = useFlowState();
+  const { loginUser, currentUser } = useFlowState();
   const navigate = useNavigate();
+  
+  // Redirect if user is already logged in
+  useEffect(() => {
+    if (currentUser) {
+      navigate('/');
+    }
+  }, [currentUser, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,8 +35,8 @@ const Login: React.FC = () => {
     
     try {
       await loginUser(email, password);
-      toast.success('Logged in successfully!');
-      navigate('/');
+      // The navigation will happen automatically when currentUser is set
+      // by the auth state change listener in FlowStateContext
     } catch (error) {
       setIsLoading(false);
       if (error instanceof Error) {

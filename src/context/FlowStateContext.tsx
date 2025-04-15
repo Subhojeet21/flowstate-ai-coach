@@ -1,4 +1,3 @@
-
 import React, { createContext, useReducer, useEffect, useState } from 'react';
 import { toast } from "sonner";
 import * as api from '@/services/api';
@@ -14,25 +13,30 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [state, dispatch] = useReducer(flowStateReducer, initialState);
   const [isLoading, setIsLoading] = useState(true);
   const [authInitialized, setAuthInitialized] = useState(false);
+  const [authSubscription, setAuthSubscription] = useState<{ unsubscribe: () => void } | null>(null);
 
-  // Load user data on auth state change
   useEffect(() => {
     console.log('Setting up auth state change listener');
-    // Listen for auth changes
+    
+    if (authSubscription) {
+      authSubscription.unsubscribe();
+    }
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state change event:', event);
         
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          await loadUserData();
+          setTimeout(() => loadUserData(), 0);
         } else if (event === 'SIGNED_OUT') {
           dispatch({ type: 'SET_USER', payload: null });
           dispatch({ type: 'RESET_ALL' });
         }
       }
     );
-
-    // Initial session check
+    
+    setAuthSubscription(subscription);
+    
     const checkAuth = async () => {
       setIsLoading(true);
       try {
@@ -56,11 +60,12 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     checkAuth();
 
     return () => {
-      subscription.unsubscribe();
+      if (subscription) {
+        subscription.unsubscribe();
+      }
     };
   }, []);
 
-  // Load user data after authentication
   const loadUserData = async () => {
     setIsLoading(true);
     try {
@@ -80,15 +85,12 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
-  // Load user tasks
   const loadUserTasks = async (userId: string) => {
     try {
       console.log('Loading tasks for user:', userId);
-      // Load active tasks
       const tasks = await tasksService.getAll(userId);
       dispatch({ type: 'SET_TASKS', payload: tasks });
       
-      // Load completed tasks
       const completedTasks = await tasksService.getCompleted(userId);
       dispatch({ type: 'SET_COMPLETED_TASKS', payload: completedTasks });
       console.log('Tasks loaded successfully');
@@ -98,7 +100,6 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
-  // Task management functions
   const createTask = async (title: string, description?: string, priority: PriorityLevel = 'medium', dueDate?: Date) => {
     if (!state.currentUser) {
       toast.error("You must be logged in to create tasks");
@@ -122,7 +123,6 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
-  // Session management functions
   const startSession = async (userState: UserState, selectedIntervention?: Intervention) => {
     if (!state.currentUser || !state.currentTask) {
       toast.error("You must be logged in and have a task selected");
@@ -172,7 +172,6 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
-  // User state and task management functions
   const setUserState = (userState: UserState) => {
     dispatch({ type: 'SET_USER_STATE', payload: userState });
   };
@@ -224,16 +223,15 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     dispatch({ type: 'SET_CURRENT_TASK', payload: taskId });
   };
 
-  // Auth functions
   const loginUser = async (email: string, password: string) => {
     setIsLoading(true);
     try {
       console.log('Attempting login for email:', email);
       const user = await api.login(email, password);
       console.log('Login successful:', user.id);
-      dispatch({ type: 'SET_USER', payload: user });
-      await loadUserTasks(user.id);
+      
       toast.success("Logged in successfully");
+      return user;
     } catch (error) {
       console.error('Login failed:', error);
       if (error instanceof Error) {
@@ -253,8 +251,9 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       console.log('Attempting registration for email:', email);
       const user = await api.register(email, password, name);
       console.log('Registration successful:', user.id);
-      dispatch({ type: 'SET_USER', payload: user });
+      
       toast.success("Account created successfully");
+      return user;
     } catch (error) {
       console.error('Registration failed:', error);
       if (error instanceof Error) {
@@ -273,8 +272,7 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     try {
       console.log('Logging out user');
       await api.logout();
-      dispatch({ type: 'SET_USER', payload: null });
-      dispatch({ type: 'RESET_ALL' });
+      
       toast.success("Logged out successfully");
     } catch (error) {
       console.error('Logout failed:', error);
@@ -284,7 +282,6 @@ export const FlowStateProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }
   };
 
-  // Utility functions
   const resetAll = () => {
     dispatch({ type: 'RESET_ALL' });
   };
