@@ -104,7 +104,7 @@ const TaskSetup: React.FC = () => {
                 >
                   <SelectTrigger id="task-priority" className="w-full border-flowstate-blue/30 focus:border-flowstate-purple">
                     <SelectValue placeholder="Select priority" />
-                    <Flag className="h-4 w-4 ml-2" />
+                    {/*<Flag className="h-4 w-4 ml-2" />*/}
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="low">Low</SelectItem>
