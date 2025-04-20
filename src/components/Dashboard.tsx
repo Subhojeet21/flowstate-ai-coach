@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useFlowState } from '@/context/FlowStateContext';
@@ -6,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { Brain, Play, History, PlusCircle, Edit, Timer, Lightbulb, ClipboardCheck, LogOut, AlertTriangle, Star, CircleDot, ListChecks, Calendar, Trash2 } from 'lucide-react';
+import { Brain, Play, History, PlusCircle, Edit, Timer, Lightbulb, ClipboardCheck, LogOut, AlertTriangle, Star, CircleDot, ListChecks, Calendar, Trash2, List, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { format, isToday } from 'date-fns';
 
@@ -75,8 +74,8 @@ const Dashboard: React.FC = () => {
   if (!currentUser) return null;
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4">
-      <div className="w-full max-w-md">
+    <div className="flex flex-col items-center justify-center min-h-screen p-4 relative">
+      <div className="w-full max-w-md pb-16"> {/* Added padding bottom to accommodate footer */}
         <div className="flex justify-between items-center mb-6">
           <div className="relative flex items-center justify-center w-16 h-16">
             <Brain className="w-12 h-12 text-flowstate-purple animate-pulse-light" />
@@ -331,6 +330,37 @@ const Dashboard: React.FC = () => {
               </span>
             )}
           </Button>
+        </div>
+      </div>
+      
+      {/* New Footer Navigation */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2">
+        <div className="max-w-md mx-auto flex justify-around items-center">
+          <button
+            onClick={viewAllTasks}
+            className="flex flex-col items-center p-2 text-flowstate-purple hover:text-flowstate-purple/90"
+          >
+            <List className="h-6 w-6" />
+            <span className="text-xs mt-1">All Tasks</span>
+          </button>
+
+          {currentTask && totalSessions > 0 && (
+            <button
+              onClick={viewSessionHistory}
+              className="flex flex-col items-center p-2 text-flowstate-purple hover:text-flowstate-purple/90"
+            >
+              <History className="h-6 w-6" />
+              <span className="text-xs mt-1">History</span>
+            </button>
+          )}
+
+          <button
+            onClick={viewTaskHistory}
+            className="flex flex-col items-center p-2 text-flowstate-purple hover:text-flowstate-purple/90"
+          >
+            <Check className="h-6 w-6" />
+            <span className="text-xs mt-1">Completed</span>
+          </button>
         </div>
       </div>
     </div>
