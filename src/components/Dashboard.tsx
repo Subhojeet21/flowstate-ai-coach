@@ -293,7 +293,7 @@ const Dashboard: React.FC = () => {
           </CardContent>
         </Card>
         
-        <div className="flex flex-col space-y-2">
+        {/*<div className="flex flex-col space-y-2">
           <Button
             variant="outline"
             className="w-full border-flowstate-purple text-flowstate-purple hover:bg-flowstate-purple/10"
@@ -330,7 +330,7 @@ const Dashboard: React.FC = () => {
               </span>
             )}
           </Button>
-        </div>
+        </div>*/}
       </div>
       
       {/* New Footer Navigation */}
