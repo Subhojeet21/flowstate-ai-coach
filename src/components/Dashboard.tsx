@@ -117,7 +117,15 @@ const Dashboard: React.FC = () => {
         
         <Card className="w-full bg-white shadow-md mb-4">
           <CardHeader className="pb-2">
-            <CardTitle className="text-2xl font-bold text-flowstate-purple">FlowState AI</CardTitle>
+            <CardTitle className="text-2xl font-bold text-flowstate-purple">FlowState AI
+                <Button
+                  onClick={editCurrentTask}
+                  className="bg-flowstate-purple hover:bg-flowstate-purple/90 text-white float-right"
+                >
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Create Task
+                </Button>
+            </CardTitle>
             <CardDescription>Your AI focus coach</CardDescription>
           </CardHeader>
           
@@ -206,13 +214,13 @@ const Dashboard: React.FC = () => {
             ) : (
               <div className="flex flex-col items-center p-6 bg-muted/20 rounded-md">
                 <p className="text-center mb-4">No active task. Set up a task to begin.</p>
-                <Button
+                {/*<Button
                   onClick={editCurrentTask}
                   className="bg-flowstate-purple hover:bg-flowstate-purple/90 text-white"
                 >
                   <PlusCircle className="mr-2 h-4 w-4" />
                   Create Task
-                </Button>
+                </Button>*/}
               </div>
             )}
           </CardContent>
@@ -233,14 +241,14 @@ const Dashboard: React.FC = () => {
               >
                 <Edit className="mr-2 h-4 w-4" />
                 Edit Task
-              </Button>*/}
+              </Button>
               <Button
                   onClick={editCurrentTask}
                   className="bg-flowstate-purple hover:bg-flowstate-purple/90 text-white"
                 >
                   <PlusCircle className="mr-2 h-4 w-4" />
                   Create New Task
-              </Button>
+              </Button>*/}
             </CardFooter>
           )}
         </Card>
