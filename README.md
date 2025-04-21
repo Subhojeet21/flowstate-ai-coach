@@ -4,6 +4,8 @@
 
 **URL**: https://lovable.dev/projects/1407de2b-7e70-4a59-8482-2a54789eec69
 
+**MVP Link**: https://flowstate-ai-coach.lovable.app/login
+
 ## How can I edit this code?
 
 There are several ways of editing your application.
