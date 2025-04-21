@@ -1,0 +1,50 @@
+
+Technical Implementation Overview for FlowState AI Coach App
+------------------------------------------------------------
+
+1. Technology Stack:
+   - Frontend: React with TypeScript, Tailwind CSS, and shadcn UI components for styling and accessibility.
+   - State Management: React Context API combined with useReducer for managing global app state (FlowStateContext).
+   - Routing: React Router DOM provides authenticated route protection for multiple app screens.
+   - Backend Integration: Supabase for authentication, database services, and real-time subscriptions.
+   - Data Fetching/Sync: Axios used for HTTP client functionality, plus direct Supabase client calls.
+
+2. Core Components and Features:
+   - User Authentication: Email & password authentication using Supabase's auth API with session persistence.
+   - Task Management: User's tasks are stored in Supabase; includes creation, completion, deletion, and listing with priority and due date.
+   - Session Management: Track work sessions linked to tasks, including start, end, duration, user state, interventions, and feedback.
+   - User State: Tracks emotional and energy levels to suggest relevant interventions.
+   - Interventions: Predefined dataset of intervention techniques filtered by user state.
+   - Streaks: Tracks user progress streaks in the backend with logic to update after session completion.
+   - Notifications: Toast notifications for success/failure feedback using the Sonner toast library.
+
+3. State Management Details:
+   - The global state maintained in FlowStateContext includes current user data, tasks, current task, completed tasks, active work session, user emotional & energy state, and interventions.
+   - A flowStateReducer manages state transitions for key actions such as task updates, session start/end, and user state changes.
+   - Context provider handles async API calls, maintains loading indicators, and updates state conditionally.
+
+4. Backend Service Layer:
+   - supabaseService.ts encapsulates all backend interactions for tasks, sessions, and user streaks.
+   - API service layer (api.ts) provides authentication functions (register, login, logout, get current user) using Supabase's client and manages token storage in local storage.
+
+5. Navigation and Screens:
+   - React Router manages multiple protected and public screens including Dashboard, Task Setup, Check-In, Interventions, Work Session, Reviews, History, Task Lists, Login, and Signup.
+   - Screens rely on FlowStateContext for data and actions.
+
+6. UI and Form Handling:
+   - Shadcn UI components used extensively for accessible UI elements like forms, buttons, modals, and toasts.
+   - react-hook-form manages form states and validation with custom wrappers for integrated UI components.
+
+7. Error Handling and User Feedback:
+   - Errors in API calls and actions are caught and reported to the user using toast messages.
+   - Console logs are used liberally in the state context for debugging and tracing flow.
+
+8. Responsiveness and Accessibility:
+   - Tailwind CSS ensures responsive layouts and styling.
+   - Radix UI primitives wrapped in shadcn components improve accessibility.
+
+Summary:
+---------
+This app is structured with clear separation of concerns, integrating Supabase for backend functionality, React Context for robust state management with react-query-like ease, and modern UI frameworks for building responsive, accessible interfaces. It supports user authentication, task and session management, personalized intervention suggestions, and streak tracking to encourage continuous user engagement.
+
+End of Technical Implementation Overview
